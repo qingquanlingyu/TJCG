@@ -1,0 +1,25 @@
+# Packages
+inc/
+include/
+lib/
+obj/
+bin/
+
+# vscode
+.vscode/
+
+# Makefile and Cmake
+CMakeLists.txt
+Makefile
+Makefile.bak
+
+# other folders
+cube/
+learn/
+solar-system/
+res/fs/
+res/vs/
+res/nanosuit/
+res/textures/
+
+
