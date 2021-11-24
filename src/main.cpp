@@ -86,16 +86,16 @@ int main()
     //glEnable(GL_PROGRAM_POINT_SIZE);//启动修改点大小
 
     //stbi_set_flip_vertically_on_load(true);
-    Shader ourShader("D:/projects/shader/vertex.vs", "D:/projects/shader/PBR.fs");
-    Shader screenShader("D:/projects/shader/screen.vs", "D:/projects/shader/screen.fs");
-    Shader skyboxShader("D:/projects/shader/skybox.vs", "D:/projects/shader/skybox.fs");
-    Shader shadowShader("D:/projects/shader/shadow.vs", "D:/projects/shader/shadow.fs");
-    Shader blurShader("D:/projects/shader/blur.vs", "D:/projects/shader/blur.fs");
-    Shader lightShader("D:/projects/shader/light.vs", "D:/projects/shader/light.fs");
-    Shader PointshadowShader("D:/projects/shader/pointShadow.vs", "D:/projects/shader/pointShadow.fs", "D:/projects/shader/pointShadow.gs");
+    Shader ourShader("../shader/vertex.vs", "../shader/PBR.fs");
+    Shader screenShader("../shader/screen.vs", "../shader/screen.fs");
+    Shader skyboxShader("../shader/skybox.vs", "../shader/skybox.fs");
+    Shader shadowShader("../shader/shadow.vs", "../shader/shadow.fs");
+    Shader blurShader("../shader/blur.vs", "../shader/blur.fs");
+    Shader lightShader("../shader/light.vs", "../shader/light.fs");
+    Shader PointshadowShader("../shader/pointShadow.vs", "../shader/pointShadow.fs", "../shader/pointShadow.gs");
 
 #ifdef STENCILTEST
-    Shader lineShader("D:/projects/shader/vertex.vs", "D:/projects/shader/fragment0.fs");
+    Shader lineShader("../shader/vertex.vs", "../shader/fragment0.fs");
 #endif
 
     glm::vec3 pointLightPositions[] = {
@@ -106,16 +106,16 @@ int main()
     };
     
     Model ourModel("D:/softwares/3d/amm_model0.obj");
-    //Model ourModel("D:/projects/cg/HybridRenderingEngine-master/assets/models/MetalRoughSpheres/MetalRoughSpheres.gltf");
+    //Model ourModel("../cg/HybridRenderingEngine-master/assets/models/MetalRoughSpheres/MetalRoughSpheres.gltf");
 
     vector<std::string> faces
     {
-        "D:/projects/shader/skybox/1/right.png",
-        "D:/projects/shader/skybox/1/left.png",
-        "D:/projects/shader/skybox/1/top.png",
-        "D:/projects/shader/skybox/1/bottom.png",
-        "D:/projects/shader/skybox/1/front.png",
-        "D:/projects/shader/skybox/1/back.png"
+        "../res/textures/skybox/right.jpg",
+        "../res/textures/skybox/left.jpg",
+        "../res/textures/skybox/top.jpg",
+        "../res/textures/skybox/bottom.jpg",
+        "../res/textures/skybox/front.jpg",
+        "../res/textures/skybox/back.jpg"
     };
     unsigned int cubemapTexture = loadCubemap(faces);
     unsigned int skyboxHdriTexture = loadHDRTexture("D:/softwares/3d/blend_model/Purelight-HDRI-Sky-Panoramas/PureLIGHT_HDRi_001_Mid_Sun_Clouds.hdr");
