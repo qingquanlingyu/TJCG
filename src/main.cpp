@@ -1,21 +1,13 @@
-#define _CRT_SECURE_NO_WARNINGS
-#include <iostream>
-#include <string>
-#include <fstream>
-#include <sstream>
-#include <iostream>
+// #define _CRT_SECURE_NO_WARNINGS
 #include <glad/glad.h>
-#include "stb_image.h"
+#include <GLFW/glfw3.h>
+
 #include "texture.h"
 #include "shadow.h"
 #include "shader.h"
 #include "camera.h"
 #include "model.h"
-#include <windows.h>
-#include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -112,7 +104,7 @@ int main()
         glm::vec3(-5.0f,  10.0f,  5.0f),
         glm::vec3(-5.0f,  10.0f,  -5.0f),
     };
-
+    
     Model ourModel("D:/softwares/3d/amm_model0.obj");
     //Model ourModel("D:/projects/cg/HybridRenderingEngine-master/assets/models/MetalRoughSpheres/MetalRoughSpheres.gltf");
 

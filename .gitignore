@@ -13,10 +13,20 @@ CMakeLists.txt
 Makefile
 Makefile.bak
 
+# some for different env
+src/glad.c
+src/model.h
+src/stb_image.h
+src/stb_image.cpp
+src/shader.h
+
+
 # other folders
 cube/
 learn/
 solar-system/
+skybox/
+xres/
 res/fs/
 res/vs/
 res/nanosuit/
