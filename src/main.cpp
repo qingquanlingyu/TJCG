@@ -51,7 +51,7 @@ int main()
 
     // glfw window creation
     // --------------------
-    glfwWindowHint(GLFW_SAMPLES, 4);//¿ªÆô¶àÖØ²ÉÑù
+    glfwWindowHint(GLFW_SAMPLES, 4);//å¼€å¯å¤šé‡é‡‡æ ·
     GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "amamiya", NULL, NULL);
     if (window == NULL)
     {
@@ -72,26 +72,26 @@ int main()
         return -1;
     }
 
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);//Òş²Ø¹â±ê 
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);//éšè—å…‰æ ‡ 
 
-    glEnable(GL_DEPTH_TEST);//¿ªÆôÉî¶È²âÊÔ
-    glDepthFunc(GL_LESS);//ÉèÖÃÉî¶È²âÊÔ±È½ÏÔËËã£¬ÉèÖÃÎªLEQUAL¿ÉÒÔ·ÀÖ¹ammÈ¹×ÓÌùÍ¼¶ªÊ§
+    glEnable(GL_DEPTH_TEST);//å¼€å¯æ·±åº¦æµ‹è¯•
+    glDepthFunc(GL_LESS);//è®¾ç½®æ·±åº¦æµ‹è¯•æ¯”è¾ƒè¿ç®—ï¼Œè®¾ç½®ä¸ºLEQUALå¯ä»¥é˜²æ­¢ammè£™å­è´´å›¾ä¸¢å¤±
 
-    glEnable(GL_BLEND);//¿ªÆô»ìºÏ£¬¿ªÆôAlpha»ìºÏºó¾°Éî»áÊ§Ğ§
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);//ÉèÖÃ»ìºÏÄ£Ê½
+    glEnable(GL_BLEND);//å¼€å¯æ··åˆï¼Œå¼€å¯Alphaæ··åˆåæ™¯æ·±ä¼šå¤±æ•ˆ
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);//è®¾ç½®æ··åˆæ¨¡å¼
 
-    glEnable(GL_MULTISAMPLE);//¿ªÆôMSAA
+    glEnable(GL_MULTISAMPLE);//å¼€å¯MSAA
 
-    //glEnable(GL_FRAMEBUFFER_SRGB);//¿ªÆôÄ¬ÈÏGAMMAĞ£Õı£¬ºÇºÇ£¬ÁÁ¶ÈÌ«¸ß
+    //glEnable(GL_FRAMEBUFFER_SRGB);//å¼€å¯é»˜è®¤GAMMAæ ¡æ­£ï¼Œå‘µå‘µï¼Œäº®åº¦å¤ªé«˜
 
-    //²âÊÔÄÚÈİ
-    //glEnable(GL_CULL_FACE);//±³ÃæÌŞ³ı£¬¿ªÁËÄ£ĞÍÈ¹±ß»áÓĞbug
+    //æµ‹è¯•å†…å®¹
+    //glEnable(GL_CULL_FACE);//èƒŒé¢å‰”é™¤ï¼Œå¼€äº†æ¨¡å‹è£™è¾¹ä¼šæœ‰bug
     //glCullFace(GL_BACK);
 
-     //glEnable(GL_BLEND);//¿ªÆô»ìºÏ£¬¿ªÆôAlpha»ìºÏºó¾°Éî»áÊ§Ğ§
-    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);//ÉèÖÃ»ìºÏÄ£Ê½
+     //glEnable(GL_BLEND);//å¼€å¯æ··åˆï¼Œå¼€å¯Alphaæ··åˆåæ™¯æ·±ä¼šå¤±æ•ˆ
+    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);//è®¾ç½®æ··åˆæ¨¡å¼
 
-    //glEnable(GL_PROGRAM_POINT_SIZE);//Æô¶¯ĞŞ¸Äµã´óĞ¡
+    //glEnable(GL_PROGRAM_POINT_SIZE);//å¯åŠ¨ä¿®æ”¹ç‚¹å¤§å°
 
     //stbi_set_flip_vertically_on_load(true);
     Shader ourShader("D:/projects/shader/vertex.vs", "D:/projects/shader/PBR.fs");
@@ -129,7 +129,7 @@ int main()
     unsigned int skyboxHdriTexture = loadHDRTexture("D:/softwares/3d/blend_model/Purelight-HDRI-Sky-Panoramas/PureLIGHT_HDRi_001_Mid_Sun_Clouds.hdr");
     unsigned int skyboxTexture1 = generateCubeMap(1024, 1024, HDR_MAP);
 
-    //Ö¡»º³å
+    //å¸§ç¼“å†²
     screenShader.use();
     screenShader.setInt("hdrBuffer", 0);
     screenShader.setInt("bloomBlur", 1);
@@ -231,7 +231,7 @@ int main()
         ourModel.Draw(shadowShader);
 
 
-        //µã¹âÔ´ÒõÓ°
+        //ç‚¹å…‰æºé˜´å½±
         glm::mat4 shadowProj = glm::perspective(90.0f, aspect, near_plane, far_plane);
         for (int i = 0; i < NR_POINT_LIGHTS; i++)
         {
@@ -340,6 +340,7 @@ int main()
         
         screenShader.use();
         screenShader.setFloat("exposure", exposure);
+        screenShader.setVec2("texelStep", glm::vec2(1.0f / SCR_WIDTH, 1.0f / SCR_HEIGHT));
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, colorBuffers[0]);
         glActiveTexture(GL_TEXTURE1);
@@ -514,7 +515,7 @@ void RenderSphere()
         std::vector<glm::vec3> positions;
         std::vector<glm::vec3> normals;
         std::vector<unsigned int> indices;
-        //»æÖÆÇò
+        //ç»˜åˆ¶çƒ
         for (unsigned int y = 0; y <= Y_SEGMENTS; ++y)
         {
             for (unsigned int x = 0; x <= X_SEGMENTS; ++x)
@@ -525,8 +526,8 @@ void RenderSphere()
                 float yPos = cos(ySegment * PI);
                 float zPos = sin(xSegment * 2.0f * PI) * sin(ySegment * PI);
 
-                positions.push_back(glm::vec3(xPos, yPos, -zPos));//ÕâÁ½¸ö±ØĞëÓÃ-z£¬·ñÔò¹âÕÕĞ§¹û³ö´í
-                normals.push_back(glm::vec3(xPos, yPos, -zPos));//ÕâÁ½¸ö±ØĞëÓÃ-z£¬·ñÔò¹âÕÕĞ§¹û³ö´í
+                positions.push_back(glm::vec3(xPos, yPos, -zPos));//è¿™ä¸¤ä¸ªå¿…é¡»ç”¨-zï¼Œå¦åˆ™å…‰ç…§æ•ˆæœå‡ºé”™
+                normals.push_back(glm::vec3(xPos, yPos, -zPos));//è¿™ä¸¤ä¸ªå¿…é¡»ç”¨-zï¼Œå¦åˆ™å…‰ç…§æ•ˆæœå‡ºé”™
             }
         }
 
@@ -574,7 +575,7 @@ void RenderSphere()
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);//Position
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));//·¨ÏòÁ¿
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));//æ³•å‘é‡
         glEnableVertexAttribArray(1);
     }
     glBindVertexArray(SphereVAO);

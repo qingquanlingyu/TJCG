@@ -3,6 +3,12 @@ out vec4 FragColor;
 
 in vec2 TexCoords;
 
+float FXAA_THRESHOLD = 0.5;
+float FXAA_REDUCE_MIN = 1.0/128.0;
+float FXAA_REDUCE_MUL = 1.0/8.0;
+float FXAA_SPAN_MAX = 8.0;
+uniform vec2 texelStep; //1.0/ScreenWidth,1.0/ScreenHeight
+
 uniform sampler2D hdrBuffer;
 uniform sampler2D bloomBlur;
 
@@ -12,13 +18,67 @@ uniform float exposure;
 void main()
 {
     const float gamma = 2.2;
-    vec3 hdrColor = texture(hdrBuffer, TexCoords).rgb;
+    vec3 hdrColor;
+    vec3 hdrM = texture(hdrBuffer, TexCoords).rgb;
+    vec3 hdrNW = textureOffset(hdrBuffer, TexCoords, ivec2(-1, 1)).rgb;
+    vec3 hdrNE = textureOffset(hdrBuffer, TexCoords, ivec2(1, 1)).rgb;
+    vec3 hdrSW = textureOffset(hdrBuffer, TexCoords, ivec2(-1, -1)).rgb;
+    vec3 hdrSE = textureOffset(hdrBuffer, TexCoords, ivec2(1, -1)).rgb;
+
+    const vec3 toLuma = vec3(0.299, 0.587, 0.114);
+	
+	// Convert from RGB to luma.
+	float lumaNW = dot(hdrNW, toLuma);
+	float lumaNE = dot(hdrNE, toLuma);
+	float lumaSW = dot(hdrSW, toLuma);
+	float lumaSE = dot(hdrSE, toLuma);
+	float lumaM = dot(hdrM, toLuma);
+
+	float lumaMin = min(lumaM, min(min(lumaNW, lumaNE), min(lumaSW, lumaSE)));
+	float lumaMax = max(lumaM, max(max(lumaNW, lumaNE), max(lumaSW, lumaSE)));
+	
+	if (lumaMax - lumaMin <= lumaMax * FXAA_THRESHOLD)
+	{
+		hdrColor = hdrM;
+	}  
+	else
+    {
+	    vec2 samplingDirection;	
+	    samplingDirection.x = -((lumaNW + lumaNE) - (lumaSW + lumaSE));
+        samplingDirection.y =  ((lumaNW + lumaSW) - (lumaNE + lumaSE));
+    
+        float samplingDirectionReduce = max((lumaNW + lumaNE + lumaSW + lumaSE) * 0.25 * FXAA_REDUCE_MUL, FXAA_REDUCE_MIN);
+
+	    float minSamplingDirectionFactor = 1.0 / (min(abs(samplingDirection.x), abs(samplingDirection.y)) + samplingDirectionReduce);
+        samplingDirection = clamp(samplingDirection * minSamplingDirectionFactor, vec2(-FXAA_SPAN_MAX), vec2(FXAA_SPAN_MAX)) * texelStep;
+	
+	    vec3 hdrSampleNeg = texture(hdrBuffer, TexCoords + samplingDirection * (1.0/3.0 - 0.5)).rgb;
+	    vec3 hdrSamplePos = texture(hdrBuffer, TexCoords + samplingDirection * (2.0/3.0 - 0.5)).rgb;
+
+	    vec3 hdrTwoTab = (hdrSamplePos + hdrSampleNeg) * 0.5;  
+
+	    vec3 hdrSampleNegOuter = texture(hdrBuffer, TexCoords + samplingDirection * (0.0/3.0 - 0.5)).rgb;
+	    vec3 hdrSamplePosOuter = texture(hdrBuffer, TexCoords + samplingDirection * (3.0/3.0 - 0.5)).rgb;
+	
+	    vec3 hdrFourTab = (hdrSamplePosOuter + hdrSampleNegOuter) * 0.25 + hdrTwoTab * 0.5;   
+	
+	    float lumaFourTab = dot(hdrFourTab, toLuma);
+	
+	    if (lumaFourTab < lumaMin || lumaFourTab > lumaMax)
+	    {
+		    hdrColor = hdrTwoTab; 
+	    }
+	    else
+	    { 
+		    hdrColor = hdrFourTab;
+	    }
+    }
     vec3 bloomColor = texture(bloomBlur, TexCoords).rgb;
-    hdrColor += 0.1 * bloomColor;//È«¾Ö·º¹â£¬¶ÔÌì¿ÕÇòµÈÒ²ÓĞĞ§£¬Ìá¸ßÇ°ÃæµÄÏµÊı¿ÉÒÔÌá¸ß¸ÃĞ§¹û£¬Ìá¸ßºó»á³öÏÖ¡°¹âÔÎ¡±¸Ğ
+    hdrColor += 0.1 * bloomColor;//å…¨å±€æ³›å…‰ï¼Œå¯¹å¤©ç©ºçƒç­‰ä¹Ÿæœ‰æ•ˆï¼Œæé«˜å‰é¢çš„ç³»æ•°å¯ä»¥æé«˜è¯¥æ•ˆæœï¼Œæé«˜åä¼šå‡ºç°â€œå…‰æ™•â€æ„Ÿ
 	
 	bloomColor -= hdrColor; 
     bloomColor = max(bloomColor, 0.0);
-    hdrColor += 0.8 * bloomColor;//¸ßÁÁ·º¹â£¬Ö»¶ÔºÜÁÁµÄµØ·½ÓĞĞ§£¬Ìá¸ßÇ°ÃæµÄÏµÊı¿ÉÒÔÌá¸ß¸ÃĞ§¹û
+    hdrColor += 0.8 * bloomColor;//é«˜äº®æ³›å…‰ï¼Œåªå¯¹å¾ˆäº®çš„åœ°æ–¹æœ‰æ•ˆï¼Œæé«˜å‰é¢çš„ç³»æ•°å¯ä»¥æé«˜è¯¥æ•ˆæœ
 
     // reinhard
     vec3 result = hdrColor / (hdrColor + vec3(1.0));
