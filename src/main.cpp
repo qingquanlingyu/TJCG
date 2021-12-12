@@ -105,21 +105,24 @@ int main()
         glm::vec3(-5.0f,  10.0f,  -5.0f),
     };
     
-    Model ourModel("D:/softwares/3d/amm_model0.obj");
+    // Model ourModel("D:/softwares/3d/amm_model0.obj");
+    Model ourModel("../res/objects/cabin/cabin.obj");
     //Model ourModel("../cg/HybridRenderingEngine-master/assets/models/MetalRoughSpheres/MetalRoughSpheres.gltf");
 
     vector<std::string> faces
     {
-        "../res/textures/skybox/right.jpg",
-        "../res/textures/skybox/left.jpg",
-        "../res/textures/skybox/top.jpg",
-        "../res/textures/skybox/bottom.jpg",
-        "../res/textures/skybox/front.jpg",
-        "../res/textures/skybox/back.jpg"
+        "../res/textures/skybox/right.png",
+        "../res/textures/skybox/left.png",
+        "../res/textures/skybox/top.png",
+        "../res/textures/skybox/bottom.png",
+        "../res/textures/skybox/front.png",
+        "../res/textures/skybox/back.png"
     };
+
+
     unsigned int cubemapTexture = loadCubemap(faces);
-    unsigned int skyboxHdriTexture = loadHDRTexture("D:/softwares/3d/blend_model/Purelight-HDRI-Sky-Panoramas/PureLIGHT_HDRi_001_Mid_Sun_Clouds.hdr");
-    unsigned int skyboxTexture1 = generateCubeMap(1024, 1024, HDR_MAP);
+    // unsigned int skyboxHdriTexture = loadHDRTexture("D:/softwares/3d/blend_model/Purelight-HDRI-Sky-Panoramas/PureLIGHT_HDRi_001_Mid_Sun_Clouds.hdr");
+    // unsigned int skyboxTexture1 = generateCubeMap(1024, 1024, HDR_MAP);
 
     //帧缓冲
     screenShader.use();
@@ -300,15 +303,9 @@ int main()
         lightShader.setMat4("view", view);
         lightShader.setMat4("projection", projection);
         RenderSphere();
-        
-        skyboxShader.use();
-        view = glm::mat4(glm::mat3(camera.GetViewMatrix()));
-        skyboxShader.setMat4("view", view);
-        skyboxShader.setMat4("projection", projection);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-        RenderSkybox();
-        
+
+
+
         GLboolean horizontal = true, first_iteration = true;
         GLuint amount = 10;
         blurShader.use();
@@ -338,8 +335,15 @@ int main()
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, pingpongBuffer[1]);
         RenderQuad();
-
         
+        skyboxShader.use();
+        view = glm::mat3(glm::mat3(camera.GetViewMatrix()));
+        skyboxShader.setMat3("view", view);
+        skyboxShader.setMat3("projection", projection);
+        glActiveTexture(GL_TEXTURE-1);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+        RenderSkybox();
+
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
@@ -352,7 +356,7 @@ void processInput(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
-    float cameraSpeed = 2.5 * deltaTime;
+    // float cameraSpeed = 2.5 * deltaTime;
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         camera.ProcessKeyboard(FORWARD, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
@@ -405,10 +409,10 @@ void RenderQuad()
     {
         GLfloat quadVertices[] = {
             // Positions        // Texture Coords
-            -1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+            -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
             -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-            1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
-            1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+             1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+             1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
         };
         // Setup plane VAO
         glGenVertexArrays(1, &quadVAO);
@@ -507,7 +511,7 @@ void RenderSphere()
         std::vector<glm::vec3> positions;
         std::vector<glm::vec3> normals;
         std::vector<unsigned int> indices;
-        //绘制球
+        // 绘制球
         for (unsigned int y = 0; y <= Y_SEGMENTS; ++y)
         {
             for (unsigned int x = 0; x <= X_SEGMENTS; ++x)

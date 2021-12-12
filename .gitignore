@@ -15,7 +15,6 @@ Makefile.bak
 
 # some for different env
 src/glad.c
-src/model.h
 src/stb_image.h
 src/stb_image.cpp
 src/shader.h
@@ -27,5 +26,5 @@ learn/
 solar-system/
 skybox/
 xres/
-
+light/
 
