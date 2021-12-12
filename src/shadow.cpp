@@ -19,7 +19,10 @@ DirShadow::DirShadow()
     glDrawBuffer(GL_NONE);
     glReadBuffer(GL_NONE);
 }
-
+void DirShadow::Bind()
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+}
 
 PointShadow::PointShadow()
 {
@@ -39,4 +42,8 @@ PointShadow::PointShadow()
     glReadBuffer(GL_NONE);
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         std::cout << "Framebuffer not complete!" << std::endl;
+}
+void PointShadow::Bind()
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
 }

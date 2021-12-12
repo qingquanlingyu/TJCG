@@ -23,7 +23,7 @@
 #include <vector>
 using namespace std;
 
-#define NR_POINT_LIGHTS 4
+#define NR_POINT_LIGHTS 1
 
 unsigned int TextureFromFile(const char* path, const string& directory, bool gamma = false);
 
@@ -48,13 +48,6 @@ public:
         for (unsigned int i = 0; i < meshes.size(); i++)
             meshes[i].Draw(shader);
     }
-
-    void Draw(Shader& shader, DirShadow& dirshadow, PointShadow  (&pointshadow)[NR_POINT_LIGHTS])
-    {
-        for (unsigned int i = 0; i < meshes.size(); i++)
-            meshes[i].Draw(shader, dirshadow, pointshadow);
-    }
-
 private:
     // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
     void loadModel(string const& path)
