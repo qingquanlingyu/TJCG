@@ -10,20 +10,25 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+const unsigned int SHADOW_WIDTH = 4096, SHADOW_HEIGHT = 4096;
 
 class DirShadow
 {
-public:
+private:
 	unsigned int depthMapFBO;
+public:
 	unsigned int depthMap;
 	DirShadow();
+	void Bind();
 };
 
 class PointShadow
 {
-public:
+private:
 	unsigned int depthMapFBO;
+public:
 	unsigned int depthCubemap;
 	PointShadow();
+	void Bind();
 };
+
