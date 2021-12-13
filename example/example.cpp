@@ -130,7 +130,7 @@ int main()
     // load models
     // -----------
     // Model backpack("../xres/objects/backpack/backpack.obj");
-    Model airplane("../res/objects/airplane/scene.gltf");
+    Model ourModel("../res/model/untitled.obj");
 
     enum GBUFFER_TEXTURE_TYPE {
         GBUFFER_TEXTURE_POSITION,
@@ -208,7 +208,7 @@ int main()
         glClear(GL_DEPTH_BUFFER_BIT);
         glActiveTexture(GL_TEXTURE3);
         glBindTexture(GL_TEXTURE_2D, woodTexture);
-        renderScene(shaderSimpleDepth, airplane);
+        renderScene(shaderSimpleDepth, ourModel);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         
         // reset viewport
@@ -235,7 +235,7 @@ int main()
         shaderGeometryPass.setInt("invertedNormals", 0);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, woodTexture);
-        renderScene(shaderGeometryPass, airplane);
+        renderScene(shaderGeometryPass, ourModel);
         // renderScene(shaderGeometryPass);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -333,23 +333,23 @@ void renderScene(Shader &shader, Model &ourModel)
     glDrawArrays(GL_TRIANGLES, 0, 6);
     // render model 
     model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(0.0f, 1.5f, 0.0));
-    model = glm::scale(model, glm::vec3(0.5f));
+    // model = glm::translate(model, glm::vec3(0.0f, 1.5f, 0.0));
+    // model = glm::scale(model, glm::vec3(0.5f));
     shader.setMat4("model", model);
     ourModel.Draw(shader);
 
-    model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(2.0f, 0.0f, 1.0));
-    model = glm::scale(model, glm::vec3(0.5f));
-    shader.setMat4("model", model);
-    ourModel.Draw(shader);
+    // model = glm::mat4(1.0f);
+    // model = glm::translate(model, glm::vec3(2.0f, 0.0f, 1.0));
+    // model = glm::scale(model, glm::vec3(0.5f));
+    // shader.setMat4("model", model);
+    // ourModel.Draw(shader);
 
-    model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(-1.0f, 0.0f, 2.0));
-    model = glm::rotate(model, glm::radians(60.0f), glm::normalize(glm::vec3(1.0, 0.0, 1.0)));
-    model = glm::scale(model, glm::vec3(0.25));
-    shader.setMat4("model", model);
-    ourModel.Draw(shader);
+    // model = glm::mat4(1.0f);
+    // model = glm::translate(model, glm::vec3(-1.0f, 0.0f, 2.0));
+    // model = glm::rotate(model, glm::radians(60.0f), glm::normalize(glm::vec3(1.0, 0.0, 1.0)));
+    // model = glm::scale(model, glm::vec3(0.25));
+    // shader.setMat4("model", model);
+    // ourModel.Draw(shader);
 }
 
 void renderScene(const Shader &shader)
