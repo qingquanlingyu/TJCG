@@ -1,20 +1,17 @@
-// #define _CRT_SECURE_NO_WARNINGS
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include "texture.h"
 #include "shadow.h"
 #include "shader.h"
 #include "camera.h"
 #include "model.h"
-
 #include "ssao.hpp"
-#include "gbuffer.hpp"
-#include <windows.h>
-#include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
+
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
@@ -77,16 +74,16 @@ int main()
     glDepthFunc(GL_LESS);
 
     //stbi_set_flip_vertically_on_load(true);
-    Shader shaderGeometryPass("D:/projects/shader/geometry.vs", "D:/projects/shader/geometry.fs");
-    Shader SSAOshader("D:/projects/shader/ssao.vs", "D:/projects/shader/ssao.fs");
-    Shader SSAOBlurShader("D:/projects/shader/ssao.vs", "D:/projects/shader/ssao_blur.fs");
-    Shader MainShader("D:/projects/shader/ssao.vs", "D:/projects/shader/PBR.fs");
-    Shader screenShader("D:/projects/shader/screen.vs", "D:/projects/shader/screen.fs");
-    Shader skyboxShader("D:/projects/shader/skybox.vs", "D:/projects/shader/skybox.fs");
-    Shader shadowShader("D:/projects/shader/shadow.vs", "D:/projects/shader/shadow.fs");
-    Shader blurShader("D:/projects/shader/blur.vs", "D:/projects/shader/blur.fs");
-    Shader lightShader("D:/projects/shader/light.vs", "D:/projects/shader/light.fs");
-    Shader PointshadowShader("D:/projects/shader/pointShadow.vs", "D:/projects/shader/pointShadow.fs", "D:/projects/shader/pointShadow.gs");
+    Shader shaderGeometryPass("../shader/geometry.vs", "../shader/geometry.fs");
+    Shader SSAOshader("../shader/ssao.vs", "../shader/ssao.fs");
+    Shader SSAOBlurShader("../shader/ssao.vs", "../shader/ssao_blur.fs");
+    Shader MainShader("../shader/ssao.vs", "../shader/PBR.fs");
+    Shader screenShader("../shader/screen.vs", "../shader/screen.fs");
+    Shader skyboxShader("../shader/skybox.vs", "../shader/skybox.fs");
+    Shader shadowShader("../shader/shadow.vs", "../shader/shadow.fs");
+    Shader blurShader("../shader/blur.vs", "../shader/blur.fs");
+    Shader lightShader("../shader/light.vs", "../shader/light.fs");
+    Shader PointshadowShader("../shader/pointShadow.vs", "../shader/pointShadow.fs", "../shader/pointShadow.gs");
 
     glm::vec3 pointLightPositions[] = {
         glm::vec3(5.0f,  10.0f,  5.0f)
@@ -95,7 +92,7 @@ int main()
         //glm::vec3(-5.0f,  10.0f,  -5.0f),
     };
 
-    Model ourModel("D:/softwares/3d/model/untitled.obj");
+    Model ourModel("../res/model/untitled.obj");
 
     vector<std::string> faces
     {
@@ -270,6 +267,8 @@ int main()
         // 2. geometry pass: render scene's geometry/color data into gbuffer
         // -----------------------------------------------------------------
         m_ssao->BindGbuffer();
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
         shaderGeometryPass.use();
         shaderGeometryPass.setMat4("model", model);
         shaderGeometryPass.setMat4("projection", projection);
@@ -278,7 +277,7 @@ int main()
         ourModel.Draw(shaderGeometryPass);
 
         // 3. generate SSAO texture
-       // ------------------------
+        // ------------------------
         m_ssao->BindSSAOFBO();
         glClear(GL_COLOR_BUFFER_BIT);
         SSAOshader.use();
@@ -338,27 +337,22 @@ int main()
         RenderQuad();
         //ourModel.Draw(MainShader);
         
-        /*
-        lightShader.use();
-        model = glm::mat4(1.0f);
-        model = glm::translate(model, DirLightPos);
-        model = glm::scale(model, glm::vec3(3.0f, 3.0f, 3.0f));
-        lightShader.setMat4("model", model);
-        lightShader.setMat4("view", view);
-        lightShader.setMat4("projection", projection);
-        RenderSphere();
+        // lightShader.use();
+        // model = glm::mat4(1.0f);
+        // model = glm::translate(model, DirLightPos);
+        // model = glm::scale(model, glm::vec3(3.0f, 3.0f, 3.0f));
+        // lightShader.setMat4("model", model);
+        // lightShader.setMat4("view", view);
+        // lightShader.setMat4("projection", projection);
+        // RenderSphere();
 
-
-
-        
-        skyboxShader.use();
-        view = glm::mat4(glm::mat3(camera.GetViewMatrix()));
-        skyboxShader.setMat4("view", view);
-        skyboxShader.setMat4("projection", projection);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-        RenderSkybox();
-        */
+        // skyboxShader.use();
+        // view = glm::mat4(glm::mat3(camera.GetViewMatrix()));
+        // skyboxShader.setMat4("view", view);
+        // skyboxShader.setMat4("projection", projection);
+        // glActiveTexture(GL_TEXTURE0);
+        // glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+        // RenderSkybox();
 
         
         GLboolean horizontal = true, first_iteration = true;
@@ -634,5 +628,3 @@ void RenderSphere()
     glDrawElements(GL_TRIANGLE_STRIP, indexCount, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 }
-
-
