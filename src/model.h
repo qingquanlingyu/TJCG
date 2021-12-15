@@ -22,8 +22,6 @@
 #include <vector>
 using namespace std;
 
-#define NR_POINT_LIGHTS 1
-
 unsigned int TextureFromFile(const char* path, const string& directory, bool gamma = false);
 
 class Model
