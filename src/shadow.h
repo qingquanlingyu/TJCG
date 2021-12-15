@@ -4,7 +4,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-const unsigned int SHADOW_WIDTH = 4096, SHADOW_HEIGHT = 4096;
+const unsigned int SHADOW_WIDTH = 2000, SHADOW_HEIGHT = 2000;
 
 class DirShadow
 {

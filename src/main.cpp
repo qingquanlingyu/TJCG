@@ -1,18 +1,21 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <iostream>
+#include <string>
+#include <fstream>
+#include <sstream>
+#include <iostream>
 #include <glad/glad.h>
+#include "shadow.h"
+#include "camera.h"
+#include "texture.h"
+#include "model.h"
+#include "ssao.hpp"
+#include "gbuffer.hpp"
+#include "SkyDome.h"
 #include <GLFW/glfw3.h>
-
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-
-#include "texture.h"
-#include "shadow.h"
-#include "shader.h"
-#include "camera.h"
-#include "model.h"
-#include "ssao.hpp"
-
-
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -22,10 +25,9 @@ void RenderSkybox();
 void RenderSphere();
 
 // settings
-#define NR_POINT_LIGHTS 1
-const unsigned int SCR_WIDTH = 1024;
-const unsigned int SCR_HEIGHT = 768;
-const float PI = 3.14159265359;
+#define NR_POINT_LIGHTS 4
+const unsigned int SCR_WIDTH = 800;
+const unsigned int SCR_HEIGHT = 600;
 
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 float lastX = SCR_WIDTH / 2.0f;
@@ -68,9 +70,9 @@ int main()
         return -1;
     }
 
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);//隐藏光标 
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);//???ع??? 
 
-    glEnable(GL_DEPTH_TEST);//开启深度测试
+    glEnable(GL_DEPTH_TEST);//???????Ȳ???
     glDepthFunc(GL_LESS);
 
     //stbi_set_flip_vertically_on_load(true);
@@ -84,29 +86,20 @@ int main()
     Shader blurShader("../shader/blur.vs", "../shader/blur.fs");
     Shader lightShader("../shader/light.vs", "../shader/light.fs");
     Shader PointshadowShader("../shader/pointShadow.vs", "../shader/pointShadow.fs", "../shader/pointShadow.gs");
+    Shader SkyDomeShader("../shader/SkyDomeShader.vs", "../shader/SkyDomeShader.fs");
 
+    
     glm::vec3 pointLightPositions[] = {
-        glm::vec3(5.0f,  10.0f,  5.0f)
-        //glm::vec3(5.0f,  10.0f,  -5.0f),
-        //glm::vec3(-5.0f,  10.0f,  5.0f),
-        //glm::vec3(-5.0f,  10.0f,  -5.0f),
+        glm::vec3(10.0f,  10.0f,  10.0f),
+        glm::vec3(10.0f,  10.0f,  -10.0f),
+        glm::vec3(-10.0f,  10.0f,  10.0f),
+        glm::vec3(-10.0f,  10.0f,  -10.0f)
     };
-
+    
     Model ourModel("../res/model/untitled.obj");
 
-    vector<std::string> faces
-    {
-        "../res/textures/skybox/right.png",
-        "../res/textures/skybox/left.png",
-        "../res/textures/skybox/top.png",
-        "../res/textures/skybox/bottom.png",
-        "../res/textures/skybox/front.png",
-        "../res/textures/skybox/back.png"
-    };
-
-
-    unsigned int cubemapTexture = loadCubemap(faces);
-
+    DirShadow dirshadow;
+    PointShadow pointshadow[NR_POINT_LIGHTS];
     enum GBUFFER_TEXTURE_TYPE {
         GBUFFER_TEXTURE_POSITION,
         GBUFFER_TEXTURE_NORMAL,
@@ -114,17 +107,22 @@ int main()
         GBUFFER_TEXTURE_NUM
     };
     SSAO* m_ssao = new SSAO(SCR_WIDTH, SCR_HEIGHT, GBUFFER_TEXTURE_NUM);
+    SkyDome *skydome = new SkyDome();
+    skydome->clouds1Map = loadTexture("../res/textures/physky/clouds1.png");
+    skydome->clouds2Map = loadTexture("../res/textures/physky/clouds2.png");
+    skydome->tint1Map = loadTexture("../res/textures/physky/tint1.png");
+    skydome->tint2Map = loadTexture("../res/textures/physky/tint2.png");
+    skydome->moonMap = loadTexture("../res/textures/physky/moon.png");
+    skydome->sunMap = loadTexture("../res/textures/physky/sun.png");
 
-    skyboxShader.use();
-    skyboxShader.setInt("skybox", 0);
+
     screenShader.use();
     screenShader.setInt("hdrBuffer", 0);
     screenShader.setInt("bloomBlur", 1);
     blurShader.use();
     blurShader.setInt("image", 0);
 
-    MainShader.use();
-    
+    MainShader.use();  
     MainShader.setInt("gPosition", 0);
     MainShader.setInt("gNormal", 1);
     MainShader.setInt("gAlbedo", 2);
@@ -137,9 +135,14 @@ int main()
     SSAOshader.setInt("texNoise", 2);
     SSAOBlurShader.use();
     SSAOBlurShader.setInt("ssaoInput", 0);
-    
-    DirShadow dirshadow;
-    PointShadow pointshadow[NR_POINT_LIGHTS];
+
+    SkyDomeShader.use();
+    SkyDomeShader.setInt("clouds1", 0);
+    SkyDomeShader.setInt("clouds2", 1);
+    SkyDomeShader.setInt("tint", 2);
+    SkyDomeShader.setInt("tint2", 3);
+    SkyDomeShader.setInt("moon", 4);
+    SkyDomeShader.setInt("sun", 5);
 
     GLuint hdrFBO;
     glGenFramebuffers(1, &hdrFBO);
@@ -193,8 +196,8 @@ int main()
     SunColor.x = 1.0f;
     SunColor.y = 0.9f;
     SunColor.z = 0.6f;
-    glm::vec3 DirColor = SunColor * glm::vec3(6.0f);
-    glm::vec3 PointColor = lightColor * glm::vec3(5.0f);
+    glm::vec3 DirColor = SunColor * glm::vec3(8.0f);
+    glm::vec3 PointColor = lightColor * glm::vec3(2.0f);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -207,18 +210,29 @@ int main()
 
         processInput(window);
         glEnable(GL_DEPTH_TEST);
+        
         // 1. render depth of scene to texture (from light's perspective)
         // --------------------------------------------------------------
-        glm::vec3 DirLightPos(1.0f, 0.0f, 0.0f);
+        glm::vec3 DirLightPos;
         float SunSpeed = 0.1;
-        DirLightPos.y = 50.0 * sin(SunSpeed * glfwGetTime());
-        DirLightPos.z = 50.0 * cos(SunSpeed * glfwGetTime());
-
+        //DirLightPos.x = 5.0f;
+        //DirLightPos.y = 50.0 * sin(SunSpeed * glfwGetTime());
+        //DirLightPos.z = 50.0 * cos(SunSpeed * glfwGetTime());
+       
+        DirLightPos = skydome->getSunPos() * glm::vec3(0.5f);
+        DirColor = SunColor * glm::vec3(8.0f);
+        if (DirLightPos.y < 0)
+        {
+            DirLightPos = -DirLightPos;
+            DirColor = lightColor * glm::vec3(5.0f);
+        }
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_FRONT);
         GLfloat aspect = (GLfloat)SHADOW_WIDTH / (GLfloat)SHADOW_HEIGHT;
-        GLfloat near_plane = 0.1f, far_plane = 100.0f;
+        GLfloat near_plane = 0.1f, far_plane = 200.0f;
         glm::mat4 lightProjection, lightView;
         glm::mat4 lightSpaceMatrix;
-        lightProjection = glm::ortho(-50.0f, 50.0f, -50.0f, 50.0f, near_plane, far_plane);
+        lightProjection = glm::ortho(-50.0f, 50.0f, -50.0f, 50.0f, near_plane, 100.0f);
         lightView = glm::lookAt(DirLightPos, glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
         lightSpaceMatrix = lightProjection * lightView;
         shadowShader.use();
@@ -234,41 +248,16 @@ int main()
         model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
         shadowShader.setMat4("model", model);
         ourModel.Draw(shadowShader);
-
-        //点光源阴影
-        glm::mat4 shadowProj = glm::perspective(90.0f, aspect, near_plane, far_plane);
-        for (int i = 0; i < NR_POINT_LIGHTS; i++)
-        {
-            std::vector<glm::mat4> shadowTransforms;
-            shadowTransforms.push_back(shadowProj * glm::lookAt(pointLightPositions[i], pointLightPositions[i] + glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0)));
-            shadowTransforms.push_back(shadowProj * glm::lookAt(pointLightPositions[i], pointLightPositions[i] + glm::vec3(-1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0)));
-            shadowTransforms.push_back(shadowProj * glm::lookAt(pointLightPositions[i], pointLightPositions[i] + glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 1.0)));
-            shadowTransforms.push_back(shadowProj * glm::lookAt(pointLightPositions[i], pointLightPositions[i] + glm::vec3(0.0, -1.0, 0.0), glm::vec3(0.0, 0.0, -1.0)));
-            shadowTransforms.push_back(shadowProj * glm::lookAt(pointLightPositions[i], pointLightPositions[i] + glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, -1.0, 0.0)));
-            shadowTransforms.push_back(shadowProj * glm::lookAt(pointLightPositions[i], pointLightPositions[i] + glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, -1.0, 0.0)));
-
-            glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
-            pointshadow[i].Bind();
-            glClear(GL_DEPTH_BUFFER_BIT);
-            PointshadowShader.use();
-            for (GLuint j = 0; j < 6; j++)
-                PointshadowShader.setMat4(("shadowMatrices[" + std::to_string(j) + "]").c_str(), shadowTransforms[j]);
-            PointshadowShader.setFloat("far_plane", far_plane);
-            PointshadowShader.setVec3("lightPos", pointLightPositions[i]);
-            PointshadowShader.setMat4("model", model);
-            ourModel.Draw(PointshadowShader);
-        }
-
+        
         glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, near_plane, far_plane);
         glm::mat4 view = camera.GetViewMatrix();
         
         // 2. geometry pass: render scene's geometry/color data into gbuffer
         // -----------------------------------------------------------------
+        glDisable(GL_CULL_FACE);
         m_ssao->BindGbuffer();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
         shaderGeometryPass.use();
         shaderGeometryPass.setMat4("model", model);
         shaderGeometryPass.setMat4("projection", projection);
@@ -277,7 +266,7 @@ int main()
         ourModel.Draw(shaderGeometryPass);
 
         // 3. generate SSAO texture
-        // ------------------------
+       // ------------------------
         m_ssao->BindSSAOFBO();
         glClear(GL_COLOR_BUFFER_BIT);
         SSAOshader.use();
@@ -297,14 +286,13 @@ int main()
         // ------------------------------------
         glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glEnable(GL_DEPTH_TEST);
         MainShader.use();
         GLuint attachments[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
         glDrawBuffers(2, attachments);
 
         MainShader.setVec3("dirLight.position", DirLightPos);
         MainShader.setVec3("dirLight.color", DirColor);
-
+        
         for (int i = 0; i < NR_POINT_LIGHTS; i++)
         {
             std::string s = "pointLights[";
@@ -317,7 +305,7 @@ int main()
             MainShader.setFloat(s + std::string("linear"), 0.09);
             MainShader.setFloat(s + std::string("quadratic"), 0.032);
         }
-
+        
         MainShader.setVec3("viewPos", camera.Position);
         MainShader.setFloat("far_plane", far_plane);
         MainShader.setFloat("near_plane", near_plane);
@@ -328,33 +316,51 @@ int main()
         m_ssao->ActivateTextureForLight();
         glActiveTexture(GL_TEXTURE4);
         glBindTexture(GL_TEXTURE_2D, dirshadow.depthMap); 
+        
         for (int i = 0; i < NR_POINT_LIGHTS; i++)
         {
             MainShader.setInt(std::string(std::string("pointshadowMap[") + std::to_string(i) + "]").c_str(), 5 + i);
             glActiveTexture(GL_TEXTURE5 + i);
             glBindTexture(GL_TEXTURE_CUBE_MAP, pointshadow[i].depthCubemap);
         }
+        
         RenderQuad();
-        //ourModel.Draw(MainShader);
         
-        // lightShader.use();
-        // model = glm::mat4(1.0f);
-        // model = glm::translate(model, DirLightPos);
-        // model = glm::scale(model, glm::vec3(3.0f, 3.0f, 3.0f));
-        // lightShader.setMat4("model", model);
-        // lightShader.setMat4("view", view);
-        // lightShader.setMat4("projection", projection);
-        // RenderSphere();
-
-        // skyboxShader.use();
-        // view = glm::mat4(glm::mat3(camera.GetViewMatrix()));
-        // skyboxShader.setMat4("view", view);
-        // skyboxShader.setMat4("projection", projection);
-        // glActiveTexture(GL_TEXTURE0);
-        // glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-        // RenderSkybox();
-
+        /*
+        lightShader.use();
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, DirLightPos);
+        model = glm::scale(model, glm::vec3(3.0f, 3.0f, 3.0f));
+        lightShader.setMat4("model", model);
+        lightShader.setMat4("view", view);
+        lightShader.setMat4("projection", projection);
+        RenderSphere();
         
+        skyboxShader.use();
+        view = glm::mat4(glm::mat3(camera.GetViewMatrix()));
+        skyboxShader.setMat4("view", view);
+        skyboxShader.setMat4("projection", projection);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+        RenderSkybox();
+        */
+
+        // 5.5. copy content of geometry's depth buffer to default framebuffer's depth buffer
+        // ----------------------------------------------------------------------------------
+        m_ssao->BindGBufferForReading();
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, hdrFBO);
+        glBlitFramebuffer(0, 0, SCR_WIDTH, SCR_HEIGHT, 0, 0, SCR_WIDTH, SCR_HEIGHT, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+        glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
+        
+        
+        // 6. render skydome
+        // ----------------------------------------------------------------------------------
+        //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        skydome->drawSkyDome(SkyDomeShader, projection, view);
+        
+    
+        // 7. final screen render: bloom and hdr (and fxaa)
+        // ----------------------------------------------------------------------------------
         GLboolean horizontal = true, first_iteration = true;
         GLuint amount = 10;
         blurShader.use();
@@ -372,7 +378,6 @@ int main()
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glDisable(GL_DEPTH_TEST); // disable depth test so screen-space quad isn't discarded due to depth test.
-        // clear all relevant buffers
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f); // set clear color to white (not really necessary actually, since we won't be able to see behind the quad anyways)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
@@ -385,14 +390,7 @@ int main()
         glBindTexture(GL_TEXTURE_2D, pingpongBuffer[1]);
         RenderQuad();
         
-        skyboxShader.use();
-        view = glm::mat3(glm::mat3(camera.GetViewMatrix()));
-        skyboxShader.setMat3("view", view);
-        skyboxShader.setMat3("projection", projection);
-        glActiveTexture(GL_TEXTURE-1);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-        RenderSkybox();
-
+        
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
@@ -405,7 +403,7 @@ void processInput(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
-    // float cameraSpeed = 2.5 * deltaTime;
+    float cameraSpeed = 2.5 * deltaTime;
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         camera.ProcessKeyboard(FORWARD, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
@@ -458,10 +456,10 @@ void RenderQuad()
     {
         GLfloat quadVertices[] = {
             // Positions        // Texture Coords
-            -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+            -1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
             -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-             1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
-             1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+            1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
+            1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
         };
         // Setup plane VAO
         glGenVertexArrays(1, &quadVAO);
@@ -557,11 +555,10 @@ void RenderSphere()
         glGenVertexArrays(1, &SphereVAO);
         glGenBuffers(1, &SphereVBO);
         glGenBuffers(1, &SphereEBO);
-        const unsigned int X_SEGMENTS = 64;
-        const unsigned int Y_SEGMENTS = 64;
         std::vector<glm::vec3> positions;
         std::vector<glm::vec3> normals;
         std::vector<unsigned int> indices;
+        //??????
         for (unsigned int y = 0; y <= Y_SEGMENTS; ++y)
         {
             for (unsigned int x = 0; x <= X_SEGMENTS; ++x)
@@ -572,8 +569,8 @@ void RenderSphere()
                 float yPos = cos(ySegment * PI);
                 float zPos = sin(xSegment * 2.0f * PI) * sin(ySegment * PI);
 
-                positions.push_back(glm::vec3(xPos, yPos, -zPos));//这两个必须用-z，否则光照效果出错
-                normals.push_back(glm::vec3(xPos, yPos, -zPos));//这两个必须用-z，否则光照效果出错
+                positions.push_back(glm::vec3(xPos, yPos, -zPos));//??��????????-z??????????Ч??????
+                normals.push_back(glm::vec3(xPos, yPos, -zPos));//??��????????-z??????????Ч??????
             }
         }
 
@@ -621,10 +618,12 @@ void RenderSphere()
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);//Position
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));//法向量
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));//????��
         glEnableVertexAttribArray(1);
     }
     glBindVertexArray(SphereVAO);
     glDrawElements(GL_TRIANGLE_STRIP, indexCount, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 }
+
+

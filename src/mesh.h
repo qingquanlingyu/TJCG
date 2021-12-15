@@ -14,7 +14,6 @@
 using namespace std;
 
 #define MAX_BONE_INFLUENCE 4
-#define NR_POINT_LIGHTS 1
 
 struct Vertex {
     // position
