@@ -68,9 +68,9 @@ int main()
         return -1;
     }
 
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);//Òş²Ø¹â±ê 
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);//éšè—å…‰æ ‡ 
 
-    glEnable(GL_DEPTH_TEST);//¿ªÆôÉî¶È²âÊÔ
+    glEnable(GL_DEPTH_TEST);//å¼€å¯æ·±åº¦æµ‹è¯•
     glDepthFunc(GL_LESS);
 
     //stbi_set_flip_vertically_on_load(true);
@@ -235,7 +235,7 @@ int main()
         shadowShader.setMat4("model", model);
         ourModel.Draw(shadowShader);
 
-        //µã¹âÔ´ÒõÓ°
+        //ç‚¹å…‰æºé˜´å½±
         glm::mat4 shadowProj = glm::perspective(90.0f, aspect, near_plane, far_plane);
         for (int i = 0; i < NR_POINT_LIGHTS; i++)
         {
@@ -572,8 +572,8 @@ void RenderSphere()
                 float yPos = cos(ySegment * PI);
                 float zPos = sin(xSegment * 2.0f * PI) * sin(ySegment * PI);
 
-                positions.push_back(glm::vec3(xPos, yPos, -zPos));//ÕâÁ½¸ö±ØĞëÓÃ-z£¬·ñÔò¹âÕÕĞ§¹û³ö´í
-                normals.push_back(glm::vec3(xPos, yPos, -zPos));//ÕâÁ½¸ö±ØĞëÓÃ-z£¬·ñÔò¹âÕÕĞ§¹û³ö´í
+                positions.push_back(glm::vec3(xPos, yPos, -zPos));//è¿™ä¸¤ä¸ªå¿…é¡»ç”¨-zï¼Œå¦åˆ™å…‰ç…§æ•ˆæœå‡ºé”™
+                normals.push_back(glm::vec3(xPos, yPos, -zPos));//è¿™ä¸¤ä¸ªå¿…é¡»ç”¨-zï¼Œå¦åˆ™å…‰ç…§æ•ˆæœå‡ºé”™
             }
         }
 
@@ -621,7 +621,7 @@ void RenderSphere()
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);//Position
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));//·¨ÏòÁ¿
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));//æ³•å‘é‡
         glEnableVertexAttribArray(1);
     }
     glBindVertexArray(SphereVAO);
