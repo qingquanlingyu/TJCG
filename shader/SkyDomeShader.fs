@@ -14,7 +14,8 @@ uniform sampler2D clouds2;//heavy clouds texture (spherical UV projection)
 uniform float weather;//mixing factor (0.5 to 1.0)
 uniform float time;
 //---------OUT------------
-out vec4 FragColor;
+layout (location = 0) out vec4 FragColor;
+layout (location = 1) out vec4 BrightColor;
 
 //---------NOISE GENERATION------------
 //Noise generation based on a simple hash, to ensure that if a given point on the dome
@@ -35,7 +36,7 @@ void main(){
     vec3 pos_norm = normalize(pos);
     float dist = dot(sun_norm,pos_norm);
 
-    vec2 texture_coord=vec2((sun_norm.y + 1.0) / 2.0 ,max(0.01,pos_norm.y));
+    vec2 texture_coord=vec2(clamp((sun_norm.y + 1.0) / 2.0, 0.02,0.98),max(0.01,pos_norm.y));
     
     //We read the tint texture according to the position of the sun and the weather factor
     vec3 color_wo_sun = texture(tint2, texture_coord).rgb;
@@ -108,8 +109,8 @@ void main(){
     //mixing with the cloud color allows us to hide things behind clouds (sun, stars, moon)
     color = mix(color,cloud_color,clamp((2-weather)*transparency,0,1));
 	
-	FragColor = vec4(color, 1.0f);
-
+	FragColor = vec4(color, 100.0f);
+    BrightColor = vec4(0.0,0.0,0.0,1.0);
 
 
 }

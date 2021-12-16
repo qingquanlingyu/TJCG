@@ -2,7 +2,7 @@
 
 SkyDome::SkyDome()
 {
-	time = MAX_TIME / 4;
+	time = MAX_TIME / 2;
 	startTime = (float)glfwGetTime();
 	SunPos = glm::vec3(0.0f, 0.0f, 0.0f);
 
@@ -151,7 +151,7 @@ void SkyDome::drawSkyDome(Shader SkyDomeShader, glm::mat4 p, glm::mat4 v)
 
 	//…Ë÷√uniform
 	SkyDomeShader.setFloat("time", time_0);
-	SkyDomeShader.setFloat("weather", 0.75);
+	SkyDomeShader.setFloat("weather", 1.0);
 	SkyDomeShader.setVec3("sun_pos", SunPos);
 	SkyDomeShader.setMat4("rot_stars", rotStars);
 	SkyDomeShader.setMat4("trans", trans);

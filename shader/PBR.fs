@@ -64,17 +64,17 @@ float calcDirLightShadows(vec3 FragPos, vec3 Normal, vec4 fragPosLightSpace)
 		float currentDepth = projCoords.z; 
 		vec3 normal = normalize(Normal);
 		vec3 lightDir = normalize(dirLight.position - FragPos);
-		float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
+		float bias = max(0.1 * (1.0 - dot(normal, lightDir)), 0.01);
 		vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
-		for(int x = -3; x <= 3; ++x)
+		for(int x = -2; x <= 2; ++x)
 		{
-			for(int y = -3; y <= 3; ++y)
+			for(int y = -2; y <= 2; ++y)
 			{
 				float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r; 
 				shadow += currentDepth - bias > pcfDepth  ? 1.0 : 0.0;        
 			}    
 		}
-		shadow /= 49.0;
+		shadow /= 25.0;
 	}
        
     return shadow;
@@ -143,6 +143,7 @@ vec3 CalcPointLight(PointLight light, vec3 normal, vec3 viewDir, vec3 fragPos, v
 void main()
 {      
     vec3 FragPos = texture(gPosition, TexCoords).rgb;
+
     vec3 Normal = texture(gNormal, TexCoords).rgb;
     vec3 albedo = texture(gAlbedo, TexCoords).rgb;
 	float AmbientOcclusion = texture(ssao, TexCoords).r;
@@ -167,7 +168,7 @@ void main()
     vec3 ambient = vec3(0.03) * albedo * AmbientOcclusion;
     radianceOut += ambient; 
 
-    FragColor = vec4(radianceOut, 1.0);
+    FragColor = vec4(radianceOut, Viewlength);
 	
 	//float brightness = dot(FragColor.rgb, vec3(0.3333, 0.3334, 0.3333));
     float brightness = dot(FragColor.rgb, vec3(0.2126, 0.7152, 0.0722));

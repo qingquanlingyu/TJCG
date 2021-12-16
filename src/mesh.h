@@ -7,7 +7,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "shader.h"
-#include "shadow.h"
 
 #include <string>
 #include <vector>
