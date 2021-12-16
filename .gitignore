@@ -15,8 +15,6 @@ Makefile.bak
 
 # some for different env
 src/glad.c
-src/stb_image.h
-src/stb_image.cpp
 src/shader.h
 
 

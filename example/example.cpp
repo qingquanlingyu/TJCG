@@ -233,6 +233,7 @@ int main()
     shaderLightingPass.setInt("gAlbedoSpec", 2);
     shaderLightingPass.setInt("ssao", 3);
     shaderLightingPass.setInt("shadowMap", 4);
+    shaderLightingPass.setInt("gWorldPosition", 5);
 
     shaderSSAO.use();
     shaderSSAO.setInt("gPosition", 0);
@@ -358,9 +359,11 @@ int main()
         shaderLightingPass.setFloat("light.Linear", linear);
         shaderLightingPass.setFloat("light.Quadratic", quadratic);
 
+        glm::mat4 invViewMat = glm::inverse(view);
         shaderLightingPass.setVec3("viewPos", camera.Position);
         shaderLightingPass.setMat4("lightSpaceMatrix", lightSpaceMatrix);
-        shaderLightingPass.setMat4("projection", projection);
+        shaderLightingPass.setMat4("invViewMat", invViewMat);
+        shaderLightingPass.setMat4("view", view);
         shaderLightingPass.setFloat("zFar", 100.0f);
 
         m_ssao->ActivateTextureForLight();
@@ -394,18 +397,18 @@ int main()
         // glm::mat4 view = camera.GetViewMatrix();
         // glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
         // draw skybox as last
-        glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
-        skyboxShader.use();
-        view = glm::mat4(glm::mat3(camera.GetViewMatrix())); // remove translation from the view matrix
-        skyboxShader.setMat4("view", view);
-        skyboxShader.setMat4("projection", projection);
-        // skybox cube
-        glBindVertexArray(skyboxVAO);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-        glBindVertexArray(0);
-        glDepthFunc(GL_LESS); // set depth function back to default
+        // glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
+        // skyboxShader.use();
+        // view = glm::mat4(glm::mat3(camera.GetViewMatrix())); // remove translation from the view matrix
+        // skyboxShader.setMat4("view", view);
+        // skyboxShader.setMat4("projection", projection);
+        // // skybox cube
+        // glBindVertexArray(skyboxVAO);
+        // glActiveTexture(GL_TEXTURE0);
+        // glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+        // glDrawArrays(GL_TRIANGLES, 0, 36);
+        // glBindVertexArray(0);
+        // glDepthFunc(GL_LESS); // set depth function back to default
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------

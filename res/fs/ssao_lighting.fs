@@ -19,10 +19,11 @@ struct Light {
 uniform Light light;
 uniform vec3 viewPos;
 uniform mat4 lightSpaceMatrix;
-uniform mat4 projection;
+uniform mat4 view;
+uniform mat4 invViewMat;    // view 矩阵的逆矩阵
 uniform float zFar;
 
-float ShadowCalculation(vec4 fragPosLightSpace, vec3 Normal, vec3 fragPos)
+float ShadowCalculation(vec4 fragPosLightSpace, vec3 Normal, vec3 worldPos)
 {
     // perform perspective divide
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
@@ -34,7 +35,7 @@ float ShadowCalculation(vec4 fragPosLightSpace, vec3 Normal, vec3 fragPos)
     float currentDepth = projCoords.z;
     // calculate bias (based on depth map resolution and slope)
     vec3 normal = normalize(Normal);
-    vec3 lightDir = normalize(light.Position - fragPos);
+    vec3 lightDir = normalize(light.Position - worldPos);
     float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
     // check whether current frag pos is in shadow
     // float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0;
@@ -75,7 +76,12 @@ bool IsInShadow(vec4 worldPos){
 void main()
 {             
     // retrieve data from gbuffer
-    vec3 FragPos = texture(gPosition, TexCoords).rgb;
+    // 注意FragPos是相机坐标系的位置，需要先还原为世界坐标
+    vec4 fragPos = texture(gPosition, TexCoords);
+    fragPos = (invViewMat * fragPos);
+    vec3 FragPos = fragPos.xyz;
+    // vec4 WorldPos = invViewMat * FragPos;
+    // vec3 worldPos = WorldPos.xyz;
     vec3 Normal = texture(gNormal, TexCoords).rgb;
     vec3 Diffuse = texture(gAlbedoSpec, TexCoords).rgb;
     float Specular = texture(gAlbedoSpec, TexCoords).a;
@@ -136,8 +142,8 @@ void main()
         I = clamp(I, 0.0f, 1.0f);
     }
     vec3 volume = light.Color * I;
-    lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * Diffuse + volume;    
-    lighting += diffuse + specular;
+    lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * Diffuse;    
+    // lighting += diffuse + specular;
 
     FragColor = vec4(lighting, 1.0);
 }
