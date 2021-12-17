@@ -359,11 +359,12 @@ int main()
         shaderLightingPass.setFloat("light.Linear", linear);
         shaderLightingPass.setFloat("light.Quadratic", quadratic);
 
-        glm::mat4 invViewMat = glm::inverse(view);
+        glm::mat4 invViewMatrix = glm::inverse(view);
         shaderLightingPass.setVec3("viewPos", camera.Position);
         shaderLightingPass.setMat4("lightSpaceMatrix", lightSpaceMatrix);
-        shaderLightingPass.setMat4("invViewMat", invViewMat);
+        shaderLightingPass.setMat4("invViewMatrix", invViewMatrix);
         shaderLightingPass.setMat4("view", view);
+        shaderLightingPass.setMat4("projection", projection);
         shaderLightingPass.setFloat("zFar", 100.0f);
 
         m_ssao->ActivateTextureForLight();

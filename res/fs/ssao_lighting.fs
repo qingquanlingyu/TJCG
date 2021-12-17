@@ -3,7 +3,7 @@ out vec4 FragColor;
 
 in vec2 TexCoords;
 
-uniform sampler2D gPosition;
+uniform sampler2D gPositionDepth;
 uniform sampler2D gNormal;
 uniform sampler2D gAlbedoSpec;
 uniform sampler2D ssao;
@@ -20,7 +20,8 @@ uniform Light light;
 uniform vec3 viewPos;
 uniform mat4 lightSpaceMatrix;
 uniform mat4 view;
-uniform mat4 invViewMat;    // view 矩阵的逆矩阵
+uniform mat4 projection;
+uniform mat4 invViewMatrix;    // view 矩阵的逆矩阵
 uniform float zFar;
 
 float ShadowCalculation(vec4 fragPosLightSpace, vec3 Normal, vec3 worldPos)
@@ -59,14 +60,24 @@ float ShadowCalculation(vec4 fragPosLightSpace, vec3 Normal, vec3 worldPos)
     return shadow;
 }
 
-bool IsInShadow(vec4 worldPos){    
-    vec4 fragPosLightSpace = lightSpaceMatrix * worldPos;
+const float NEAR = 0.1;     // 投影矩阵的近平面
+const float FAR = 100.0f;   // 投影矩阵的远平面
+
+float LinearizeDepth(float depth)
+{
+    float z = depth * 2.0 - 1.0; // 回到NDC
+    return (2.0 * NEAR * FAR) / (FAR + NEAR - z * (FAR - NEAR));    
+}
+
+bool IsInShadow(vec4 worldPos) {    
+    vec4 fragPosLightSpace = lightSpaceMatrix * vec4(worldPos.xyz, 1.0);
     // perform perspective divide
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    // vec3 projCoords = worldPos.xyz / worldPos.w;
     // transform to [0,1] range
     projCoords = projCoords * 0.5 + 0.5;
     // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
-    float closestDepth = texture(shadowMap, projCoords.xy).r; 
+    float closestDepth = texture(shadowMap, projCoords.xy).r;
     // get depth of current fragment from light's perspective
     float currentDepth = projCoords.z;
 
@@ -77,11 +88,11 @@ void main()
 {             
     // retrieve data from gbuffer
     // 注意FragPos是相机坐标系的位置，需要先还原为世界坐标
-    vec4 fragPos = texture(gPosition, TexCoords);
-    fragPos = (invViewMat * fragPos);
-    vec3 FragPos = fragPos.xyz;
-    // vec4 WorldPos = invViewMat * FragPos;
-    // vec3 worldPos = WorldPos.xyz;
+    vec3 viewFragPos = texture(gPositionDepth, TexCoords).xyz;
+    vec4 worldFragPos = invViewMatrix * vec4(viewFragPos, 1.0);
+
+    vec3 FragPos = worldFragPos.xyz;
+    // vec3 FragPos = texture(gPosition, TexCoords).xyz;
     vec3 Normal = texture(gNormal, TexCoords).rgb;
     vec3 Diffuse = texture(gAlbedoSpec, TexCoords).rgb;
     float Specular = texture(gAlbedoSpec, TexCoords).a;
@@ -130,7 +141,7 @@ void main()
 
                 // Mie散射
                 float cosTheta = dot(lightDir, normalize(-light.Position));
-                float g = 0.0f;
+                float g = 0.50f;
                 float hg = 1.0f/(4.0f*3.14f)* (1.0f - g*g)/ pow(1.0f + g * g - 2.0f * g * dot(lightDir,-viewDir), 1.5f);
                 
                 if (cosTheta > 0.9) {
@@ -142,7 +153,8 @@ void main()
         I = clamp(I, 0.0f, 1.0f);
     }
     vec3 volume = light.Color * I;
-    lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * Diffuse;    
+    lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * Diffuse + volume;    
+    // lighting = volume;
     // lighting += diffuse + specular;
 
     FragColor = vec4(lighting, 1.0);
