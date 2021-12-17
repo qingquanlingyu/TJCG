@@ -119,6 +119,7 @@ int main()
     skydome->tint2Map = loadTexture("../res/textures/physky/tint2.png");
     skydome->moonMap = loadTexture("../res/textures/physky/moon.png");
     skydome->sunMap = loadTexture("../res/textures/physky/sun.png");
+    skydome->noisetexMap = loadTexture("../res/textures/noisetex.png");
 
 
     screenShader.use();
@@ -148,6 +149,7 @@ int main()
     SkyDomeShader.setInt("tint2", 3);
     SkyDomeShader.setInt("moon", 4);
     SkyDomeShader.setInt("sun", 5);
+    SkyDomeShader.setInt("noisetex", 6);
 
     GLuint hdrFBO;
     glGenFramebuffers(1, &hdrFBO);
@@ -219,7 +221,7 @@ int main()
         // 1. render depth of scene to texture (from light's perspective)
         // --------------------------------------------------------------
         glm::vec3 DirLightPos;
-        // float SunSpeed = 0.1;
+        float SunSpeed = 0.1;
         //DirLightPos.x = 5.0f;
         //DirLightPos.y = 50.0 * sin(SunSpeed * glfwGetTime());
         //DirLightPos.z = 50.0 * cos(SunSpeed * glfwGetTime());
@@ -235,7 +237,7 @@ int main()
         }
         glEnable(GL_CULL_FACE);
         glCullFace(GL_FRONT);
-        // GLfloat aspect = (GLfloat)SHADOW_WIDTH / (GLfloat)SHADOW_HEIGHT;
+        GLfloat aspect = (GLfloat)SHADOW_WIDTH / (GLfloat)SHADOW_HEIGHT;
         GLfloat near_plane = 0.1f, far_plane = 200.0f;
         glm::mat4 lightProjection, lightView;
         glm::mat4 lightSpaceMatrix;
@@ -363,6 +365,7 @@ int main()
         // 6. render skydome
         // ----------------------------------------------------------------------------------
         //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        skydome->setCameraPos(camera.Position);
         skydome->drawSkyDome(SkyDomeShader, projection, view);
         
     
@@ -419,6 +422,7 @@ int main()
         glfwPollEvents();
     }
     glfwTerminate();
+    std::cout << "Finish" << std::endl;
     return 0;
 }
 

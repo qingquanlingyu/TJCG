@@ -69,19 +69,35 @@ float LinearizeDepth(float depth)
     return (2.0 * NEAR * FAR) / (FAR + NEAR - z * (FAR - NEAR));    
 }
 
-bool IsInShadow(vec4 worldPos) {    
+bool IsInShadow(vec3 worldPos) {    
     vec4 fragPosLightSpace = lightSpaceMatrix * vec4(worldPos.xyz, 1.0);
     // perform perspective divide
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-    // vec3 projCoords = worldPos.xyz / worldPos.w;
     // transform to [0,1] range
     projCoords = projCoords * 0.5 + 0.5;
     // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
     float closestDepth = texture(shadowMap, projCoords.xy).r;
     // get depth of current fragment from light's perspective
     float currentDepth = projCoords.z;
+    // float currentDepth = LinearizeDepth(projCoords.z);
 
-    return currentDepth >= closestDepth;
+    return currentDepth > closestDepth;
+}
+
+// 判断是否在视线内，用于体积光
+// 目前需要考虑因为Gbuffer的存在是否必要
+bool IsInView(vec3 worldPos) {
+    vec4 fragPosViewSpace = projection * view * vec4(worldPos.xyz, 1.0);
+    // perform perspective divide
+    vec3 projCoords = fragPosViewSpace.xyz / fragPosViewSpace.w;
+    // transform to [0,1] range
+    projCoords = projCoords * 0.5 + 0.5;
+    // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
+    float closestDepth = texture(gPositionDepth, projCoords.xy).a;
+    // get depth of current fragment from light's perspective
+    float currentDepth = LinearizeDepth(projCoords.z);
+
+    return currentDepth < closestDepth;
 }
 
 void main()
@@ -123,7 +139,7 @@ void main()
     float I = 0.0f;
     {
         // volume light
-        const int n_steps = 100;
+        const int n_steps = 150;
         vec3 startPos = viewPos;
         vec3 endPos = FragPos;
         vec3 ray = endPos - startPos;
@@ -134,14 +150,16 @@ void main()
         vec3 pos = startPos;
 
         for (int i = 0; i < n_steps; i++) {
-            if (!IsInShadow(vec4(pos, 1.0f))) {
+            if (!IsInShadow(pos)) {
+            // if (IsInView(pos)) {
+            // if (IsInView(pos) && !IsInShadow(pos)) {
             // if (tmpshadow >= 0.0f) {
                 vec3 lightDir = normalize(pos - light.Position);
                 vec3 viewDir = normalize(pos - viewPos);
 
                 // Mie散射
                 float cosTheta = dot(lightDir, normalize(-light.Position));
-                float g = 0.50f;
+                float g = 0.0f;
                 float hg = 1.0f/(4.0f*3.14f)* (1.0f - g*g)/ pow(1.0f + g * g - 2.0f * g * dot(lightDir,-viewDir), 1.5f);
                 
                 if (cosTheta > 0.9) {
@@ -152,6 +170,7 @@ void main()
         }
         I = clamp(I, 0.0f, 1.0f);
     }
+    vec3 yellow_light = vec3(1,198.0/255.0,107.0/255.0);
     vec3 volume = light.Color * I;
     lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * Diffuse + volume;    
     // lighting = volume;

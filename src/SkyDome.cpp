@@ -2,15 +2,13 @@
 
 SkyDome::SkyDome()
 {
-	time = MAX_TIME / 2;
+	time = MAX_TIME / 4;
 	startTime = (float)glfwGetTime();
 	SunPos = glm::vec3(0.0f, 0.0f, 0.0f);
 
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
 	glGenBuffers(1, &EBO);
-
-	glm::vec3 SunPos = glm::vec3(0.0f, 0.0f, 0.0f);
 
 	//生成球模型
 	int i, j;
@@ -87,7 +85,7 @@ SkyDome::SkyDome()
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * indices.size(), &indices[0], GL_STATIC_DRAW);
 }
 
-void SkyDome::BindTexture(Shader SkyDomeShader)
+void SkyDome::BindTexture(Shader& SkyDomeShader)
 {
 	SkyDomeShader.use();
 	glActiveTexture(GL_TEXTURE0);
@@ -102,6 +100,8 @@ void SkyDome::BindTexture(Shader SkyDomeShader)
 	glBindTexture(GL_TEXTURE_2D, moonMap);
 	glActiveTexture(GL_TEXTURE5);
 	glBindTexture(GL_TEXTURE_2D, sunMap);
+	glActiveTexture(GL_TEXTURE6);
+	glBindTexture(GL_TEXTURE_2D, noisetexMap);
 }
 
 SkyDome::~SkyDome() {
@@ -117,6 +117,10 @@ glm::vec3 SkyDome::getSunPos() {
 	return SunPos;
 }
 
+void SkyDome::setCameraPos(glm::vec3 pos) {
+	CameraPos = pos;
+}
+
 void SkyDome::setTime(unsigned int time) {
 	this->time = time;
 	startTime = (float)glfwGetTime();
@@ -128,10 +132,14 @@ void SkyDome::setTimeSpeed(float timeSpeed) {
 }
 
 
-void SkyDome::drawSkyDome(Shader SkyDomeShader, glm::mat4 p, glm::mat4 v)
+void SkyDome::drawSkyDome(Shader& SkyDomeShader, glm::mat4 p, glm::mat4 v)
 {
 	float time_0 = ((int)(((float)glfwGetTime() - startTime) * timeSpeed) + time) % MAX_TIME * 1.0 / MAX_TIME;	//在0~1之间
-
+	frameCounter++;
+	if (frameCounter == INT_MAX)
+	{
+		frameCounter = 0;
+	}
 	//设置太阳位置
 	SunPos = glm::vec3(SkyRadius * std::cos(time_0 * 2 * PI - glm::radians(90.0)), SkyRadius * std::sin(time_0 * 2 * PI - glm::radians(90.0)), 0.0);
 	
@@ -157,6 +165,8 @@ void SkyDome::drawSkyDome(Shader SkyDomeShader, glm::mat4 p, glm::mat4 v)
 	SkyDomeShader.setMat4("trans", trans);
 	SkyDomeShader.setMat4("proj", proj);
 	SkyDomeShader.setMat4("view", view);
+	SkyDomeShader.setVec3("CameraPos", CameraPos);
+	SkyDomeShader.setInt("frameCounter", frameCounter);
 
 	//绑定VAO，VBO，EBO
 	glBindVertexArray(VAO);
@@ -178,4 +188,8 @@ void SkyDome::drawSkyDome(Shader SkyDomeShader, glm::mat4 p, glm::mat4 v)
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 	glDrawElements(GL_TRIANGLE_STRIP, indexCount, GL_UNSIGNED_INT, 0);
 	
+}
+
+int SkyDome::getTime() {
+	return (int)(((float)glfwGetTime() - startTime) * timeSpeed) + time;
 }

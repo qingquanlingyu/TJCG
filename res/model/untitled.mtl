@@ -1,4 +1,4 @@
-# Blender MTL File: 'untitled.blend'
+# Blender MTL File: 'None'
 # Material Count: 42
 
 newmtl 亭
@@ -48,6 +48,7 @@ d 1.000000
 illum 2
 map_Bump NM\\UV.png
 map_Kd data\\UV.jpg
+map_Ks data\\new\\UV_Roughness.png
 
 newmtl 墙体_完整
 Ns 225.000000
@@ -60,6 +61,7 @@ d 1.000000
 illum 2
 map_Bump NM\\gafKR_001_monastery_wall_NM.png
 map_Kd data\\gafKR_001_monastery_wall.png
+map_Ks data\\new\\2_Roughness.png
 
 newmtl 墙体_重复
 Ns 225.000000
@@ -84,6 +86,7 @@ d 1.000000
 illum 2
 map_Bump NM\\gafKR_001_monastery_wall_NM.png
 map_Kd data\\gafKR_001_monastery_wall.png
+map_Ks data\\new\\2_Roughness.png
 
 newmtl 房子
 Ns 225.000000
@@ -180,6 +183,7 @@ d 1.000000
 illum 2
 map_Bump NM\\bldKR_008_village_house01_NM.png
 map_Kd data\\bldKR_008_village_house01.png
+map_Ks data\\new\\1_Roughness.png
 
 newmtl 房顶落叶
 Ns 225.000000
@@ -262,7 +266,9 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
+map_Bump data\\new\\Bitmap2Material_3_Normal.png
 map_Kd data\\tree.png
+map_Ks data\\new\\Bitmap2Material_3_Roughness.png
 map_d data\\tree.png
 
 newmtl 桥
@@ -348,6 +354,7 @@ d 1.000000
 illum 2
 map_Bump NM\\env211_Stones_NM0.png
 map_Kd data\\env211_Stones0.png
+map_Ks data\\new\\env211_Stones_Roughness.png
 
 newmtl 石头组2
 Ns 225.000000
@@ -372,6 +379,7 @@ d 1.000000
 illum 2
 map_Bump NM\\env211_Stones_NM.png
 map_Kd data\\env211_Stones1.png
+map_Ks data\\new\\env211_Stones_Roughness.png
 
 newmtl 石阶A
 Ns 225.000000
@@ -396,6 +404,7 @@ d 1.000000
 illum 2
 map_Bump NM\\envAS_019_StoneStairs_NM.png
 map_Kd data\\envAS_019_StoneStairs.png
+map_Ks data\\new\\envAS_019_StoneStairs_Roughness.png
 
 newmtl 石阶C
 Ns 225.000000
@@ -408,6 +417,7 @@ d 1.000000
 illum 2
 map_Bump NM\\envKR_004_stoneLadder_NM.png
 map_Kd data\\envKR_004_stoneLadder.png
+map_Ks data\\new\\envKR_004_stoneLadder_Roughness.png
 
 newmtl 粮
 Ns 225.000000
@@ -504,3 +514,4 @@ d 1.000000
 illum 2
 map_Bump NM\\gafKR_001_monastery_wall_NM.png
 map_Kd data\\gafKR_001_monastery_wall.png
+map_Ks data\\new\\875A4820.png

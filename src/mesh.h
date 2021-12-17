@@ -60,11 +60,14 @@ public:
     void Draw(Shader& shader)
     {
         // bind appropriate textures
+        glActiveTexture(GL_TEXTURE0);
         unsigned int diffuseNr = 1;
         unsigned int specularNr = 1;
         unsigned int normalNr = 1;
         unsigned int heightNr = 1;
         unsigned int i = 0;
+        bool nmap = false;
+        bool rmap = false;
         for (; i < textures.size(); i++)
         {
             glActiveTexture(GL_TEXTURE0 + i); // active proper texture unit before binding
@@ -74,9 +77,15 @@ public:
             if (name == "texture_diffuse")
                 number = std::to_string(diffuseNr++);
             else if (name == "texture_specular")
+            {  
                 number = std::to_string(specularNr++); // transfer unsigned int to stream
+                rmap = true;
+            }
             else if (name == "texture_normal")
-                number = std::to_string(normalNr++); // transfer unsigned int to stream
+            {
+                number = std::to_string(normalNr++);// transfer unsigned int to stream
+                nmap = true;
+            }
             else if (name == "texture_height")
                 number = std::to_string(heightNr++); // transfer unsigned int to stream
 
@@ -85,7 +94,8 @@ public:
             // and finally bind the texture
             glBindTexture(GL_TEXTURE_2D, textures[i].id);
         }
-
+        glUniform1i(glGetUniformLocation(shader.ID, "rmap"), (int)rmap);
+        glUniform1i(glGetUniformLocation(shader.ID, "nmap"), (int)nmap);
         // draw mesh
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
