@@ -221,7 +221,7 @@ float VolumeCalculation(vec3 worldPos)
 
             // Mie散射
             float cosTheta = dot(lightDir, normalize(-dirLight.position));
-            float g = 0.96f;
+            float g = 0.9f;
             float hg = 1.0f/(4.0f*3.14f)* (1.0f - g*g)/ pow(1.0f + g * g - 2.0f * g * dot(lightDir,-viewDir), 1.5f);
             
             if (cosTheta > 0.9) {
