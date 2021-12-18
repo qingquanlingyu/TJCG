@@ -125,7 +125,7 @@ void main()
 		hdrColor = hdrColor/49.0;
 	}
     vec3 bloomColor = texture(bloomBlur, TexCoords).rgb;
-    hdrColor += 0.1 * bloomColor;//全局泛光，对天空球等也有效，提高前面的系数可以提高该效果，提高后会出现“光晕”感
+    hdrColor += 0.2 * bloomColor;//全局泛光，对天空球等也有效，提高前面的系数可以提高该效果，提高后会出现“光晕”感
 	
 	bloomColor -= hdrColor; 
     bloomColor = max(bloomColor, 0.0);
