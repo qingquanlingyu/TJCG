@@ -10,7 +10,7 @@
 #include <cmath>
 #include <cstdio>
 
-#include"shader.h"
+#include <learnopengl/shader.h>
 
 #define GET_X(r,u,v) r*std::sin(PI*v)*std::cos(2*PI*u)
 #define GET_Y(r,u,v) r*std::sin(PI*v)*std::sin(2*PI*u)
@@ -40,6 +40,9 @@ private:
 	glm::vec3 SunPos;
 	glm::vec3 CameraPos;
 	int frameCounter = 0;
+
+protected:
+	void buildVertices();
 public:
 	unsigned int clouds1Map, clouds2Map, tint1Map, tint2Map, moonMap, sunMap, noisetexMap;
 	SkyDome();

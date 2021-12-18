@@ -89,17 +89,6 @@ int main()
         glm::vec3(-10.0f,  10.0f,  -10.0f)
     };
     
-    // vector<std::string> faces
-    // {
-    //     "../xres/textures/skybox/right.jpg",
-    //     "../xres/textures/skybox/left.jpg",
-    //     "../xres/textures/skybox/top.jpg",
-    //     "../xres/textures/skybox/bottom.jpg",
-    //     "../xres/textures/skybox/front.jpg",
-    //     "../xres/textures/skybox/back.jpg"
-    // };
-    //
-    // unsigned int cubemapTexture = loadCubemap(faces);
 
     Model ourModel("../res/model/untitled.obj");
 
