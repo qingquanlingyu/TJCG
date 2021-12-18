@@ -36,15 +36,6 @@ struct DirLight {
     vec3 color;
 };  
 uniform DirLight dirLight;
-#define NR_POINT_LIGHTS 4
-struct PointLight {
-    vec3 position;
-    float constant;
-    float linear;
-    float quadratic;
-    vec3 color;
-};  
-uniform PointLight pointLights[NR_POINT_LIGHTS];
 
 const float PI = 3.14159265359;
 
@@ -110,40 +101,7 @@ vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir, vec3 albedo, float 
     return radiance;
 }
 
-vec3 CalcPointLight(PointLight light, vec3 normal, vec3 viewDir, vec3 fragPos, vec3 albedo, float metallic, float roughness, vec3 F0)
-{
-    vec3 lightDir = normalize(light.position);
-    vec3 halfway  = normalize(lightDir + viewDir);
-    vec3 radianceIn = light.color;
-	float nDotV = max(dot(normal, viewDir), 0.0);
-    float nDotL = max(dot(normal, lightDir), 0.0);
-	
-	float distance    = length(light.position - fragPos);
-    float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));  
-	
-	radianceIn *= attenuation;
-	
-    //Cook-Torrance BRDF
-    float NDF = DistributionGGX(normal, halfway, roughness);
-    float G   = GeometrySmith(normal, nDotV, nDotL, roughness);
-    vec3  F   = fresnelSchlick(max(dot(halfway,viewDir), 0.0), F0);
-
-    //Finding specular and diffuse component
-    vec3 kS = F;
-    vec3 kD = vec3(1.0) - kS;
-    kD *= 1.0 - metallic;
-
-    vec3 numerator = NDF * G * F;
-    float denominator = 4.0 * nDotV * nDotL;
-    vec3 specular = numerator / max (denominator, 0.0000001);
-
-    vec3 radiance = (kD * (albedo / PI) + specular ) * radianceIn * nDotL;
-
-    return radiance;
-}
-
 bool IsInShadow(vec3 worldPos);
-bool IsInView(vec3 worldPos);
 float VolumeCalculation(vec3 worldPos);
 
 void main()
@@ -167,15 +125,13 @@ void main()
     Dirshadow = min(Dirshadow, 0.75);
 	
 	vec3 radianceOut = CalcDirLight(dirLight, N, V, albedo, metal, rough, Dirshadow, F0);
-    
-	for (int i = 0; i < NR_POINT_LIGHTS; i++)    
-        radianceOut += CalcPointLight(pointLights[i], N, V, FragPos, albedo, metal, rough, F0);
 
     vec3 ambient = vec3(0.03) * albedo * AmbientOcclusion;
     radianceOut += ambient; 
 
     // volume light
-    vec3 volume = dirLight.color * VolumeCalculation(FragPos);
+	float volumeCoe = 0.1;
+    vec3 volume = dirLight.color * volumeCoe * VolumeCalculation(FragPos);
     radianceOut += volume;
     // radianceOut = volume;
 
@@ -228,6 +184,8 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0)
 
 
 bool IsInShadow(vec3 worldPos) {    
+	if (worldPos.y>20.0)
+		return true;
     vec4 fragPosLightSpace = lightSpaceMatrix * vec4(worldPos.xyz, 1.0);
     // perform perspective divide
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
@@ -242,27 +200,11 @@ bool IsInShadow(vec3 worldPos) {
     return currentDepth > closestDepth;
 }
 
-// 判断是否在视线内，用于体积光
-// 目前需要考虑因为Gbuffer的存在是否必要
-bool IsInView(vec3 worldPos) {
-    vec4 fragPosViewSpace = projection * view * vec4(worldPos.xyz, 1.0);
-    // perform perspective divide
-    vec3 projCoords = fragPosViewSpace.xyz / fragPosViewSpace.w;
-    // transform to [0,1] range
-    projCoords = projCoords * 0.5 + 0.5;
-    // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
-    float closestDepth = texture(gPosition, projCoords.xy).a;
-    // get depth of current fragment from light's perspective
-    float currentDepth = projCoords.z;
-
-    return currentDepth < closestDepth;
-}
-
 float VolumeCalculation(vec3 worldPos)
 {
     float I = 0.0f;
     // volume light
-    const int n_steps = 150;
+    const int n_steps = 80;
     vec3 startPos = viewPos;
     vec3 endPos = worldPos;
     vec3 ray = endPos - startPos;
@@ -274,8 +216,6 @@ float VolumeCalculation(vec3 worldPos)
 
     for (int i = 0; i < n_steps; i++) {
         if (!IsInShadow(pos)) {
-        // if (IsInView(pos)) {
-        // if (IsInView(pos) && !IsInShadow(pos)) {
             vec3 lightDir = normalize(pos - dirLight.position);
             vec3 viewDir = normalize(pos - viewPos);
 
