@@ -184,14 +184,11 @@ int main()
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pingpongBuffer[i], 0);
     }
 
-    glm::vec3 lightColor;
-    lightColor.x = 1.0f;
-    lightColor.y = 1.0f;
-    lightColor.z = 1.0f;
-    glm::vec3 SunColor;
-    SunColor.x = 1.0f;
-    SunColor.y = 0.9f;
-    SunColor.z = 0.6f;
+    //--------------------------------------
+    // light info
+    glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
+    glm::vec3 SunColor(1.0f, 0.9f, 0.6f);
+    glm::vec3 SunsetColor(1.0f, 0.7f, 0.5f);
     glm::vec3 DirColor = SunColor * glm::vec3(8.0f);
     glm::vec3 PointColor = lightColor * glm::vec3(2.0f);
 
@@ -209,21 +206,17 @@ int main()
         
         // 1. render depth of scene to texture (from light's perspective)
         // --------------------------------------------------------------
-        glm::vec3 DirLightPos;
-        // float SunSpeed = 0.1;
-        //DirLightPos.x = 5.0f;
-        //DirLightPos.y = 50.0 * sin(SunSpeed * glfwGetTime());
-        //DirLightPos.z = 50.0 * cos(SunSpeed * glfwGetTime());
+        glm::vec3 DirLightPos = skydome->getSunPos() * glm::vec3(0.5f);
 
-        DirLightPos = skydome->getSunPos() * glm::vec3(0.5f);
         if (DirLightPos.y >= 0) {
-            DirColor = SunColor * glm::vec3(8.0f * min(5.0f, DirLightPos.y) / 5.0);
-        }        
-        else
-        {
+            DirColor = SunColor * glm::vec3(7.5f * min(15.0f, DirLightPos.y) / 15.0) + 
+                       SunsetColor * glm::vec3(2.5f * (15.0f - min(15.0f, DirLightPos.y)) / 15.0);
+        } else {
             DirLightPos = -DirLightPos;
-            DirColor = SunColor * glm::vec3(3.0f * min(5.0f, DirLightPos.y) / 5.0);
+            DirColor = lightColor * glm::vec3(2.0f * min(15.0f, DirLightPos.y) / 15.0) + 
+                       lightColor * glm::vec3(1.0f * (15.0f - min(15.0f, DirLightPos.y)) / 15.0);
         }
+
         glEnable(GL_CULL_FACE);
         glCullFace(GL_FRONT);
         // GLfloat aspect = (GLfloat)SHADOW_WIDTH / (GLfloat)SHADOW_HEIGHT;
@@ -394,23 +387,6 @@ int main()
         RenderQuad();
 
 
-        // view = camera.GetViewMatrix();
-        // projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-        // glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
-        // skyboxShader.use();
-        // view = glm::mat4(glm::mat3(camera.GetViewMatrix())); // remove translation from the view matrix
-        // skyboxShader.setMat4("view", view);
-        // skyboxShader.setMat4("projection", projection);
-        // // skybox cube
-        // // glBindVertexArray(skyboxVAO);
-        // glActiveTexture(GL_TEXTURE0);
-        // glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-        // RenderSkybox();
-        // // glDrawArrays(GL_TRIANGLES, 0, 36);
-        // // glBindVertexArray(0);
-        // glDepthFunc(GL_LESS); // set depth function back to default
-        
-        
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
