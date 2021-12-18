@@ -1,22 +1,13 @@
-#define _CRT_SECURE_NO_WARNINGS
-#include <iostream>
-#include <string>
-#include <fstream>
-#include <sstream>
-#include <iostream>
 #include <glad/glad.h>
+#include <GLFW/glfw3.h>
+
 #include "shadow.h"
 #include "camera.h"
 #include "texture.h"
 #include "model.h"
 #include "ssao.hpp"
-#include "gbuffer.hpp"
 #include "SkyDome.h"
-#include <windows.h>
-#include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -71,23 +62,24 @@ int main()
         return -1;
     }
 
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);//“˛≤ÿπ‚±Í 
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);//ÈöêËóèÂÖâÊ†á 
 
-    glEnable(GL_DEPTH_TEST);//ø™∆Ù…Ó∂»≤‚ ‘
+    glEnable(GL_DEPTH_TEST);//ÂºÄÂêØÊ∑±Â∫¶ÊµãËØï
     glDepthFunc(GL_LESS);
 
     //stbi_set_flip_vertically_on_load(true);
-    Shader shaderGeometryPass("D:/projects/shader/geometry.vs", "D:/projects/shader/geometry.fs");
-    Shader SSAOshader("D:/projects/shader/ssao.vs", "D:/projects/shader/ssao.fs");
-    Shader SSAOBlurShader("D:/projects/shader/ssao.vs", "D:/projects/shader/ssao_blur.fs");
-    Shader MainShader("D:/projects/shader/ssao.vs", "D:/projects/shader/PBR.fs");
-    Shader screenShader("D:/projects/shader/screen.vs", "D:/projects/shader/screen.fs");
-    Shader skyboxShader("D:/projects/shader/skybox.vs", "D:/projects/shader/skybox.fs");
-    Shader shadowShader("D:/projects/shader/shadow.vs", "D:/projects/shader/shadow.fs");
-    Shader blurShader("D:/projects/shader/blur.vs", "D:/projects/shader/blur.fs");
-    Shader lightShader("D:/projects/shader/light.vs", "D:/projects/shader/light.fs");
-    Shader PointshadowShader("D:/projects/shader/pointShadow.vs", "D:/projects/shader/pointShadow.fs", "D:/projects/shader/pointShadow.gs");
-    Shader SkyDomeShader("D:/projects/shader/SkyDomeShader.vs", "D:/projects/shader/SkyDomeShader.fs");
+    Shader shaderGeometryPass("../shader/geometry.vs", "../shader/geometry.fs");
+    Shader SSAOshader("../shader/ssao.vs", "../shader/ssao.fs");
+    Shader SSAOBlurShader("../shader/ssao.vs", "../shader/ssao_blur.fs");
+    Shader MainShader("../shader/ssao.vs", "../shader/PBR.fs");
+    Shader screenShader("../shader/screen.vs", "../shader/screen.fs");
+    Shader skyboxShader("../shader/skybox.vs", "../shader/skybox.fs");
+    // Shader skyboxShader("../xres/vs/6.2.skybox.vs", "../xres/fs/6.2.skybox.fs");
+    Shader shadowShader("../shader/shadow.vs", "../shader/shadow.fs");
+    Shader blurShader("../shader/blur.vs", "../shader/blur.fs");
+    Shader lightShader("../shader/light.vs", "../shader/light.fs");
+    Shader PointshadowShader("../shader/pointShadow.vs", "../shader/pointShadow.fs", "../shader/pointShadow.gs");
+    Shader SkyDomeShader("../shader/SkyDomeShader.vs", "../shader/SkyDomeShader.fs");
 
     
     glm::vec3 pointLightPositions[] = {
@@ -97,18 +89,8 @@ int main()
         glm::vec3(-10.0f,  10.0f,  -10.0f)
     };
     
-    Model ourModel("D:/softwares/3d/model/untitled.obj");
 
-    vector<std::string> faces
-    {
-        "D:/projects/shader/skybox/1/right.png",
-        "D:/projects/shader/skybox/1/left.png",
-        "D:/projects/shader/skybox/1/top.png",
-        "D:/projects/shader/skybox/1/bottom.png",
-        "D:/projects/shader/skybox/1/front.png",
-        "D:/projects/shader/skybox/1/back.png"
-    };
-    unsigned int cubemapTexture = loadCubemap(faces);
+    Model ourModel("../res/model/untitled.obj");
 
     DirShadow dirshadow;
     PointShadow pointshadow[NR_POINT_LIGHTS];
@@ -120,15 +102,14 @@ int main()
     };
     SSAO* m_ssao = new SSAO(SCR_WIDTH, SCR_HEIGHT, GBUFFER_TEXTURE_NUM);
     SkyDome *skydome = new SkyDome();
-    skydome->clouds1Map = loadTexture("D:/projects/shader/texture/clouds1.png");
-    skydome->clouds2Map = loadTexture("D:/projects/shader/texture/clouds2.png");
-    skydome->tint1Map = loadTexture("D:/projects/shader/texture/tint1.png");
-    skydome->tint2Map = loadTexture("D:/projects/shader/texture/tint2.png");
-    skydome->moonMap = loadTexture("D:/projects/shader/texture/moon.png");
-    skydome->sunMap = loadTexture("D:/projects/shader/texture/sun.png");
+    skydome->clouds1Map = loadTexture("../res/textures/physky/clouds1.png");
+    skydome->clouds2Map = loadTexture("../res/textures/physky/clouds2.png");
+    skydome->tint1Map = loadTexture("../res/textures/physky/tint1.png");
+    skydome->tint2Map = loadTexture("../res/textures/physky/tint2.png");
+    skydome->moonMap = loadTexture("../res/textures/physky/moon.png");
+    skydome->sunMap = loadTexture("../res/textures/physky/sun.png");
+    skydome->noisetexMap = loadTexture("../res/textures/noisetex.png");
 
-    skyboxShader.use();
-    skyboxShader.setInt("skybox", 0);
 
     screenShader.use();
     screenShader.setInt("hdrBuffer", 0);
@@ -150,12 +131,14 @@ int main()
     SSAOBlurShader.use();
     SSAOBlurShader.setInt("ssaoInput", 0);
 
+    SkyDomeShader.use();
     SkyDomeShader.setInt("clouds1", 0);
     SkyDomeShader.setInt("clouds2", 1);
     SkyDomeShader.setInt("tint", 2);
     SkyDomeShader.setInt("tint2", 3);
     SkyDomeShader.setInt("moon", 4);
     SkyDomeShader.setInt("sun", 5);
+    SkyDomeShader.setInt("noisetex", 6);
 
     GLuint hdrFBO;
     glGenFramebuffers(1, &hdrFBO);
@@ -227,19 +210,27 @@ int main()
         // 1. render depth of scene to texture (from light's perspective)
         // --------------------------------------------------------------
         glm::vec3 DirLightPos;
-        float SunSpeed = 0.1;
-        DirLightPos.x = 5.0f;
-        DirLightPos.y = 50.0 * sin(SunSpeed * glfwGetTime());
-        DirLightPos.z = 50.0 * cos(SunSpeed * glfwGetTime());
-       
-        //DirLightPos = skydome->getSunPos();
+        // float SunSpeed = 0.1;
+        //DirLightPos.x = 5.0f;
+        //DirLightPos.y = 50.0 * sin(SunSpeed * glfwGetTime());
+        //DirLightPos.z = 50.0 * cos(SunSpeed * glfwGetTime());
+
+        DirLightPos = skydome->getSunPos() * glm::vec3(0.5f);
+        if (DirLightPos.y >= 0) {
+            DirColor = SunColor * glm::vec3(8.0f * min(5.0f, DirLightPos.y) / 5.0);
+        }        
+        else
+        {
+            DirLightPos = -DirLightPos;
+            DirColor = SunColor * glm::vec3(3.0f * min(5.0f, DirLightPos.y) / 5.0);
+        }
         glEnable(GL_CULL_FACE);
         glCullFace(GL_FRONT);
-        GLfloat aspect = (GLfloat)SHADOW_WIDTH / (GLfloat)SHADOW_HEIGHT;
-        GLfloat near_plane = 0.1f, far_plane = 100.0f;
+        // GLfloat aspect = (GLfloat)SHADOW_WIDTH / (GLfloat)SHADOW_HEIGHT;
+        GLfloat near_plane = 0.1f, far_plane = 200.0f;
         glm::mat4 lightProjection, lightView;
         glm::mat4 lightSpaceMatrix;
-        lightProjection = glm::ortho(-50.0f, 50.0f, -50.0f, 50.0f, near_plane, far_plane);
+        lightProjection = glm::ortho(-50.0f, 50.0f, -50.0f, 50.0f, near_plane, 100.0f);
         lightView = glm::lookAt(DirLightPos, glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
         lightSpaceMatrix = lightProjection * lightView;
         shadowShader.use();
@@ -255,11 +246,11 @@ int main()
         model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
         shadowShader.setMat4("model", model);
         ourModel.Draw(shadowShader);
-        
+
         glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, near_plane, far_plane);
         glm::mat4 view = camera.GetViewMatrix();
-        
+
         // 2. geometry pass: render scene's geometry/color data into gbuffer
         // -----------------------------------------------------------------
         glDisable(GL_CULL_FACE);
@@ -273,12 +264,14 @@ int main()
         ourModel.Draw(shaderGeometryPass);
 
         // 3. generate SSAO texture
-       // ------------------------
+        // ------------------------
         m_ssao->BindSSAOFBO();
         glClear(GL_COLOR_BUFFER_BIT);
         SSAOshader.use();
         m_ssao->ActivateSSAOTexture(SSAOshader);
         SSAOshader.setMat4("projection", projection);
+        view = camera.GetViewMatrix();
+        SSAOshader.setMat4("view", view);
         RenderQuad();
 
         // 4. blur SSAO texture to remove noise
@@ -288,7 +281,7 @@ int main()
         SSAOBlurShader.use();
         m_ssao->ActivateSSAOBlurTexture(SSAOBlurShader);
         RenderQuad();
-        
+
         // 5. PBR main render using GBuffer and SSAO
         // ------------------------------------
         glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
@@ -299,7 +292,7 @@ int main()
 
         MainShader.setVec3("dirLight.position", DirLightPos);
         MainShader.setVec3("dirLight.color", DirColor);
-        
+
         for (int i = 0; i < NR_POINT_LIGHTS; i++)
         {
             std::string s = "pointLights[";
@@ -312,27 +305,29 @@ int main()
             MainShader.setFloat(s + std::string("linear"), 0.09);
             MainShader.setFloat(s + std::string("quadratic"), 0.032);
         }
-        
+
         MainShader.setVec3("viewPos", camera.Position);
         MainShader.setFloat("far_plane", far_plane);
         MainShader.setFloat("near_plane", near_plane);
         MainShader.setFloat("metal", 0.0);
         MainShader.setFloat("rough", 0.5);
         MainShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
+        MainShader.setMat4("projection", projection);
+        MainShader.setMat4("view", view);
 
         m_ssao->ActivateTextureForLight();
         glActiveTexture(GL_TEXTURE4);
-        glBindTexture(GL_TEXTURE_2D, dirshadow.depthMap); 
-        
+        glBindTexture(GL_TEXTURE_2D, dirshadow.depthMap);
+
         for (int i = 0; i < NR_POINT_LIGHTS; i++)
         {
             MainShader.setInt(std::string(std::string("pointshadowMap[") + std::to_string(i) + "]").c_str(), 5 + i);
             glActiveTexture(GL_TEXTURE5 + i);
             glBindTexture(GL_TEXTURE_CUBE_MAP, pointshadow[i].depthCubemap);
         }
-        
+
         RenderQuad();
-        
+
         /*
         lightShader.use();
         model = glm::mat4(1.0f);
@@ -342,7 +337,7 @@ int main()
         lightShader.setMat4("view", view);
         lightShader.setMat4("projection", projection);
         RenderSphere();
-        
+
         skyboxShader.use();
         view = glm::mat4(glm::mat3(camera.GetViewMatrix()));
         skyboxShader.setMat4("view", view);
@@ -358,12 +353,13 @@ int main()
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, hdrFBO);
         glBlitFramebuffer(0, 0, SCR_WIDTH, SCR_HEIGHT, 0, 0, SCR_WIDTH, SCR_HEIGHT, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
         glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
-        
-        
+
+
         // 6. render skydome
         // ----------------------------------------------------------------------------------
         //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        //skydome->drawSkyDome(SkyDomeShader, projection, view);
+        skydome->setCameraPos(camera.Position);
+        skydome->drawSkyDome(SkyDomeShader, projection, view);
         
     
         // 7. final screen render: bloom and hdr (and fxaa)
@@ -387,7 +383,7 @@ int main()
         glDisable(GL_DEPTH_TEST); // disable depth test so screen-space quad isn't discarded due to depth test.
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f); // set clear color to white (not really necessary actually, since we won't be able to see behind the quad anyways)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        
+
         screenShader.use();
         screenShader.setFloat("exposure", exposure);
         screenShader.setVec2("texelStep", glm::vec2(1.0f / SCR_WIDTH, 1.0f / SCR_HEIGHT));
@@ -396,12 +392,30 @@ int main()
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, pingpongBuffer[1]);
         RenderQuad();
+
+
+        // view = camera.GetViewMatrix();
+        // projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        // glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
+        // skyboxShader.use();
+        // view = glm::mat4(glm::mat3(camera.GetViewMatrix())); // remove translation from the view matrix
+        // skyboxShader.setMat4("view", view);
+        // skyboxShader.setMat4("projection", projection);
+        // // skybox cube
+        // // glBindVertexArray(skyboxVAO);
+        // glActiveTexture(GL_TEXTURE0);
+        // glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+        // RenderSkybox();
+        // // glDrawArrays(GL_TRIANGLES, 0, 36);
+        // // glBindVertexArray(0);
+        // glDepthFunc(GL_LESS); // set depth function back to default
         
         
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
     glfwTerminate();
+    std::cout << "Finish" << std::endl;
     return 0;
 }
 
@@ -410,7 +424,7 @@ void processInput(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
-    float cameraSpeed = 2.5 * deltaTime;
+    // float cameraSpeed = 2.5 * deltaTime;
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         camera.ProcessKeyboard(FORWARD, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
@@ -565,7 +579,7 @@ void RenderSphere()
         std::vector<glm::vec3> positions;
         std::vector<glm::vec3> normals;
         std::vector<unsigned int> indices;
-        //ªÊ÷∆«Ú
+        //ÁªòÂà∂ÁêÉ
         for (unsigned int y = 0; y <= Y_SEGMENTS; ++y)
         {
             for (unsigned int x = 0; x <= X_SEGMENTS; ++x)
@@ -576,8 +590,8 @@ void RenderSphere()
                 float yPos = cos(ySegment * PI);
                 float zPos = sin(xSegment * 2.0f * PI) * sin(ySegment * PI);
 
-                positions.push_back(glm::vec3(xPos, yPos, -zPos));//’‚¡Ω∏ˆ±ÿ–Î”√-z£¨∑Ò‘Úπ‚’’–ßπ˚≥ˆ¥Ì
-                normals.push_back(glm::vec3(xPos, yPos, -zPos));//’‚¡Ω∏ˆ±ÿ–Î”√-z£¨∑Ò‘Úπ‚’’–ßπ˚≥ˆ¥Ì
+                positions.push_back(glm::vec3(xPos, yPos, -zPos));//Ëøô‰∏§‰∏™ÂøÖÈ°ªÁî®-zÔºåÂê¶ÂàôÂÖâÁÖßÊïàÊûúÂá∫Èîô
+                normals.push_back(glm::vec3(xPos, yPos, -zPos));//Ëøô‰∏§‰∏™ÂøÖÈ°ªÁî®-zÔºåÂê¶ÂàôÂÖâÁÖßÊïàÊûúÂá∫Èîô
             }
         }
 
@@ -625,12 +639,11 @@ void RenderSphere()
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);//Position
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));//∑®œÚ¡ø
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));//Ê≥ïÂêëÈáè
         glEnableVertexAttribArray(1);
     }
     glBindVertexArray(SphereVAO);
     glDrawElements(GL_TRIANGLE_STRIP, indexCount, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 }
-
 

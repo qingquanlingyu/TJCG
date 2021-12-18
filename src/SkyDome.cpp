@@ -6,16 +6,125 @@ SkyDome::SkyDome()
 	startTime = (float)glfwGetTime();
 	SunPos = glm::vec3(0.0f, 0.0f, 0.0f);
 
+	buildVertices();
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
 	glGenBuffers(1, &EBO);
 
-	glm::vec3 SunPos = glm::vec3(0.0f, 0.0f, 0.0f);
+	glBindVertexArray(VAO);
 
-	//生成球模型
-	int i, j;
-	float u, v;
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * data.size(), &data.front(), GL_STATIC_DRAW);
 
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * indices.size(), &indices.front(), GL_STATIC_DRAW);
+
+	int stride = (3 + 2 + 3) * sizeof(float);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride, (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, stride, (void*)(5 * sizeof(float)));
+	glEnableVertexAttribArray(2);
+}
+
+void SkyDome::BindTexture(Shader& SkyDomeShader)
+{
+	SkyDomeShader.use();
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, clouds1Map);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, clouds2Map);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, tint1Map);
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D, tint2Map);
+	glActiveTexture(GL_TEXTURE4);
+	glBindTexture(GL_TEXTURE_2D, moonMap);
+	glActiveTexture(GL_TEXTURE5);
+	glBindTexture(GL_TEXTURE_2D, sunMap);
+	glActiveTexture(GL_TEXTURE6);
+	glBindTexture(GL_TEXTURE_2D, noisetexMap);
+}
+
+SkyDome::~SkyDome() {
+	glDeleteVertexArrays(1, &VAO);
+	glDeleteBuffers(1, &VBO);
+	glDeleteBuffers(1, &EBO);
+}
+
+void SkyDome::setSunPos(glm::vec3 pos) {
+	SunPos = pos;
+}
+glm::vec3 SkyDome::getSunPos() {
+	return SunPos;
+}
+
+void SkyDome::setCameraPos(glm::vec3 pos) {
+	CameraPos = pos;
+}
+
+void SkyDome::setTime(unsigned int time) {
+	this->time = time;
+	startTime = (float)glfwGetTime();
+}
+
+
+void SkyDome::setTimeSpeed(float timeSpeed) {
+	this->timeSpeed = timeSpeed;
+}
+
+
+void SkyDome::drawSkyDome(Shader& SkyDomeShader, glm::mat4 p, glm::mat4 v)
+{
+	float time_0 = ((int)(((float)glfwGetTime() - startTime) * timeSpeed) + time) % MAX_TIME * 1.0 / MAX_TIME;	//在0~1之间
+	frameCounter++;
+	if (frameCounter == INT_MAX)
+	{
+		frameCounter = 0;
+	}
+	//设置太阳位置
+	SunPos = glm::vec3(SkyRadius * std::cos(time_0 * 2 * PI - glm::radians(90.0)), SkyRadius * std::sin(time_0 * 2 * PI - glm::radians(90.0)), 0.0);
+	
+	SkyDomeShader.use();
+	BindTexture(SkyDomeShader);
+	glm::mat4 trans, proj, view, rotStars;
+
+	trans = glm::mat4(1.0f);
+	trans = glm::translate(trans, glm::vec3(0.0f, 10.0f, 0.0f));
+	trans = glm::scale(trans, glm::vec3(SkyRadius, SkyRadius, SkyRadius));
+
+	proj = p;
+	view = v;
+
+	rotStars = glm::mat4(1.0f);
+	rotStars = glm::rotate(rotStars, glm::radians((float)0.0), glm::vec3(0.0, 1.0, 0.0));
+
+	//设置uniform
+	SkyDomeShader.setFloat("time", time_0);
+	SkyDomeShader.setFloat("weather", 0.75);
+	SkyDomeShader.setVec3("sun_pos", SunPos);
+	SkyDomeShader.setMat4("rot_stars", rotStars);
+	SkyDomeShader.setMat4("trans", trans);
+	SkyDomeShader.setMat4("proj", proj);
+	SkyDomeShader.setMat4("view", view);
+	SkyDomeShader.setVec3("CameraPos", CameraPos);
+	SkyDomeShader.setInt("frameCounter", frameCounter);
+
+	//绑定VAO，VBO，EBO
+	glBindVertexArray(VAO);
+	glDrawElements(GL_TRIANGLE_STRIP, indexCount, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+}
+
+int SkyDome::getTime() {
+	return (int)(((float)glfwGetTime() - startTime) * timeSpeed) + time;
+}
+
+// 构建顶点数据
+void SkyDome::buildVertices()
+{
+	// 生成球模型
 	std::vector<glm::vec3> positions;
 	std::vector<glm::vec2> uv;
 	std::vector<glm::vec3> normals;
@@ -77,105 +186,4 @@ SkyDome::SkyDome()
 			data.push_back(normals[i].z);
 		}
 	}
-
-	glBindVertexArray(VAO);
-
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * data.size(), &data[0], GL_STATIC_DRAW);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * indices.size(), &indices[0], GL_STATIC_DRAW);
-}
-
-void SkyDome::BindTexture(Shader SkyDomeShader)
-{
-	SkyDomeShader.use();
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, clouds1Map);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, clouds2Map);
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, tint1Map);
-	glActiveTexture(GL_TEXTURE3);
-	glBindTexture(GL_TEXTURE_2D, tint2Map);
-	glActiveTexture(GL_TEXTURE4);
-	glBindTexture(GL_TEXTURE_2D, moonMap);
-	glActiveTexture(GL_TEXTURE5);
-	glBindTexture(GL_TEXTURE_2D, sunMap);
-}
-
-SkyDome::~SkyDome() {
-	glDeleteVertexArrays(1, &VAO);
-	glDeleteBuffers(1, &VBO);
-	glDeleteBuffers(1, &EBO);
-}
-
-void SkyDome::setSunPos(glm::vec3 pos) {
-	SunPos = pos;
-}
-glm::vec3 SkyDome::getSunPos() {
-	return SunPos;
-}
-
-void SkyDome::setTime(unsigned int time) {
-	this->time = time;
-	startTime = (float)glfwGetTime();
-}
-
-
-void SkyDome::setTimeSpeed(float timeSpeed) {
-	this->timeSpeed = timeSpeed;
-}
-
-
-void SkyDome::drawSkyDome(Shader SkyDomeShader, glm::mat4 p, glm::mat4 v)
-{
-	float time_0 = ((int)(((float)glfwGetTime() - startTime) * timeSpeed) + time) % MAX_TIME * 1.0 / MAX_TIME;	//在0~1之间
-
-	//设置太阳位置
-	SunPos = glm::vec3(SkyRadius * std::cos(time_0 * 2 * PI - glm::radians(90.0)), SkyRadius * std::sin(time_0 * 2 * PI - glm::radians(90.0)), 0.0);
-	
-	SkyDomeShader.use();
-	BindTexture(SkyDomeShader);
-	glm::mat4 trans, proj, view, rotStars;
-
-	trans = glm::mat4();
-	trans = glm::translate(trans, glm::vec3(0.0f, 10.0f, 0.0f));
-	trans = glm::scale(trans, glm::vec3(SkyRadius, SkyRadius, SkyRadius));
-
-	proj = p;
-	view = v;
-
-	rotStars = glm::mat4();
-	rotStars = glm::rotate(rotStars, glm::radians((float)0.0), glm::vec3(0.0, 1.0, 0.0));
-
-	//设置uniform
-	SkyDomeShader.setFloat("time", time_0);
-	SkyDomeShader.setFloat("weather", 0.75);
-	SkyDomeShader.setVec3("sun_pos", SunPos);
-	SkyDomeShader.setMat4("rot_stars", rotStars);
-	SkyDomeShader.setMat4("trans", trans);
-	SkyDomeShader.setMat4("proj", proj);
-	SkyDomeShader.setMat4("view", view);
-
-	//绑定VAO，VBO，EBO
-	glBindVertexArray(VAO);
-
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * data.size(), &data[0], GL_STATIC_DRAW);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * indices.size(), &indices[0], GL_STATIC_DRAW);
-
-	int stride = (3 + 2 + 3) * sizeof(float);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0);
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride, (void*)(3 * sizeof(float)));
-	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, stride, (void*)(5 * sizeof(float)));
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glDrawElements(GL_TRIANGLE_STRIP, indexCount, GL_UNSIGNED_INT, 0);
-	
 }

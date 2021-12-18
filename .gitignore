@@ -1,0 +1,29 @@
+# Packages
+inc/
+include/
+lib/
+obj/
+bin/
+
+# vscode
+.vscode/
+
+# Makefile and Cmake
+CMakeLists.txt
+Makefile
+Makefile.bak
+
+# some for different env
+src/glad.c
+src/shader.h
+
+
+# other folders
+cube/
+learn/
+solar-system/
+skybox/
+xres/
+light/
+skydome/
+
