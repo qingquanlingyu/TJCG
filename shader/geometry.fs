@@ -1,5 +1,5 @@
 #version 430 core
-layout (location = 0) out vec3 gPosition;
+layout (location = 0) out vec4 gPosition;
 layout (location = 1) out vec3 gNormal;
 layout (location = 2) out vec4 gAlbedo;
 
@@ -21,7 +21,8 @@ void main()
     if(alpha < 0.5){
         discard;
     }
-    gPosition.rgb = FragPos;
+    gPosition.xyz = FragPos;
+	gPosition.a = gl_FragCoord.z;
     // also store the per-fragment normals into the gbuffer
     vec3 normal1, normal2;
 	normal1 = texture(texture_normal1, TexCoords).rgb;

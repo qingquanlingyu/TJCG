@@ -18,11 +18,14 @@ float bias = 0.025;
 const vec2 noiseScale = vec2(800.0/4.0, 600.0/4.0); 
 
 uniform mat4 projection;
+uniform mat4 view;
 
 void main()
 {
     // get input for SSAO algorithm
-    vec3 fragPos = texture(gPosition, TexCoords).xyz;
+    vec3 worldPos = texture(gPosition, TexCoords).xyz;
+    // worldPos to viewPos
+    vec3 fragPos = (view * vec4(worldPos, 1.0)).xyz;
     vec3 normal = normalize(texture(gNormal, TexCoords).rgb);
     vec3 randomVec = normalize(texture(texNoise, TexCoords * noiseScale).xyz);
     // create TBN change-of-basis matrix: from tangent-space to view-space

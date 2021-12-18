@@ -60,14 +60,14 @@ float ShadowCalculation(vec4 fragPosLightSpace, vec3 Normal, vec3 worldPos)
     return shadow;
 }
 
-const float NEAR = 0.1;     // 投影矩阵的近平面
-const float FAR = 100.0f;   // 投影矩阵的远平面
+// const float NEAR = 0.1;     // 投影矩阵的近平面
+// const float FAR = 100.0f;   // 投影矩阵的远平面
 
-float LinearizeDepth(float depth)
-{
-    float z = depth * 2.0 - 1.0; // 回到NDC
-    return (2.0 * NEAR * FAR) / (FAR + NEAR - z * (FAR - NEAR));    
-}
+// float LinearizeDepth(float depth)
+// {
+//     float z = depth * 2.0 - 1.0; // 回到NDC
+//     return (2.0 * NEAR * FAR) / (FAR + NEAR - z * (FAR - NEAR));    
+// }
 
 bool IsInShadow(vec3 worldPos) {    
     vec4 fragPosLightSpace = lightSpaceMatrix * vec4(worldPos.xyz, 1.0);
@@ -95,7 +95,7 @@ bool IsInView(vec3 worldPos) {
     // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
     float closestDepth = texture(gPositionDepth, projCoords.xy).a;
     // get depth of current fragment from light's perspective
-    float currentDepth = LinearizeDepth(projCoords.z);
+    float currentDepth = projCoords.z;
 
     return currentDepth < closestDepth;
 }

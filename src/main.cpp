@@ -221,7 +221,7 @@ int main()
         // 1. render depth of scene to texture (from light's perspective)
         // --------------------------------------------------------------
         glm::vec3 DirLightPos;
-        float SunSpeed = 0.1;
+        // float SunSpeed = 0.1;
         //DirLightPos.x = 5.0f;
         //DirLightPos.y = 50.0 * sin(SunSpeed * glfwGetTime());
         //DirLightPos.z = 50.0 * cos(SunSpeed * glfwGetTime());
@@ -237,7 +237,7 @@ int main()
         }
         glEnable(GL_CULL_FACE);
         glCullFace(GL_FRONT);
-        GLfloat aspect = (GLfloat)SHADOW_WIDTH / (GLfloat)SHADOW_HEIGHT;
+        // GLfloat aspect = (GLfloat)SHADOW_WIDTH / (GLfloat)SHADOW_HEIGHT;
         GLfloat near_plane = 0.1f, far_plane = 200.0f;
         glm::mat4 lightProjection, lightView;
         glm::mat4 lightSpaceMatrix;
@@ -275,12 +275,14 @@ int main()
         ourModel.Draw(shaderGeometryPass);
 
         // 3. generate SSAO texture
-       // ------------------------
+        // ------------------------
         m_ssao->BindSSAOFBO();
         glClear(GL_COLOR_BUFFER_BIT);
         SSAOshader.use();
         m_ssao->ActivateSSAOTexture(SSAOshader);
         SSAOshader.setMat4("projection", projection);
+        view = camera.GetViewMatrix();
+        SSAOshader.setMat4("view", view);
         RenderQuad();
 
         // 4. blur SSAO texture to remove noise
@@ -321,6 +323,8 @@ int main()
         MainShader.setFloat("metal", 0.0);
         MainShader.setFloat("rough", 0.5);
         MainShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
+        MainShader.setMat4("projection", projection);
+        MainShader.setMat4("view", view);
 
         m_ssao->ActivateTextureForLight();
         glActiveTexture(GL_TEXTURE4);

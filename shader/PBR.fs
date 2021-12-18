@@ -11,6 +11,8 @@ uniform vec3 viewPos;
 uniform float far_plane;
 uniform float near_plane;
 uniform mat4 lightSpaceMatrix;
+uniform mat4 view;
+uniform mat4 projection;
 
 layout (location = 0) out vec4 FragColor;
 layout (location = 1) out vec4 BrightColor;
@@ -140,6 +142,10 @@ vec3 CalcPointLight(PointLight light, vec3 normal, vec3 viewDir, vec3 fragPos, v
     return radiance;
 }
 
+bool IsInShadow(vec3 worldPos);
+bool IsInView(vec3 worldPos);
+float VolumeCalculation(vec3 worldPos);
+
 void main()
 {      
     vec3 FragPos = texture(gPosition, TexCoords).rgb;
@@ -167,6 +173,11 @@ void main()
 
     vec3 ambient = vec3(0.03) * albedo * AmbientOcclusion;
     radianceOut += ambient; 
+
+    // volume light
+    vec3 volume = dirLight.color * VolumeCalculation(FragPos);
+    radianceOut += volume;
+    // radianceOut = volume;
 
     FragColor = vec4(radianceOut, Viewlength);
 	
@@ -213,4 +224,72 @@ float GeometrySmith(vec3 N, float nDotV, float nDotL, float roughness)
 vec3 fresnelSchlick(float cosTheta, vec3 F0)
 {
     return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
-}  
+} 
+
+
+bool IsInShadow(vec3 worldPos) {    
+    vec4 fragPosLightSpace = lightSpaceMatrix * vec4(worldPos.xyz, 1.0);
+    // perform perspective divide
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    // transform to [0,1] range
+    projCoords = projCoords * 0.5 + 0.5;
+    // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
+    float closestDepth = texture(shadowMap, projCoords.xy).r;
+    // get depth of current fragment from light's perspective
+    float currentDepth = projCoords.z;
+    // float currentDepth = LinearizeDepth(projCoords.z);
+
+    return currentDepth > closestDepth;
+}
+
+// 判断是否在视线内，用于体积光
+// 目前需要考虑因为Gbuffer的存在是否必要
+bool IsInView(vec3 worldPos) {
+    vec4 fragPosViewSpace = projection * view * vec4(worldPos.xyz, 1.0);
+    // perform perspective divide
+    vec3 projCoords = fragPosViewSpace.xyz / fragPosViewSpace.w;
+    // transform to [0,1] range
+    projCoords = projCoords * 0.5 + 0.5;
+    // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
+    float closestDepth = texture(gPosition, projCoords.xy).a;
+    // get depth of current fragment from light's perspective
+    float currentDepth = projCoords.z;
+
+    return currentDepth < closestDepth;
+}
+
+float VolumeCalculation(vec3 worldPos)
+{
+    float I = 0.0f;
+    // volume light
+    const int n_steps = 150;
+    vec3 startPos = viewPos;
+    vec3 endPos = worldPos;
+    vec3 ray = endPos - startPos;
+    float rayLen = length(ray);
+    vec3 rayDir = normalize(ray);
+    float stepLen = rayLen / n_steps;
+    vec3 step = rayDir * stepLen;
+    vec3 pos = startPos;
+
+    for (int i = 0; i < n_steps; i++) {
+        if (!IsInShadow(pos)) {
+        // if (IsInView(pos)) {
+        // if (IsInView(pos) && !IsInShadow(pos)) {
+            vec3 lightDir = normalize(pos - dirLight.position);
+            vec3 viewDir = normalize(pos - viewPos);
+
+            // Mie散射
+            float cosTheta = dot(lightDir, normalize(-dirLight.position));
+            float g = 0.96f;
+            float hg = 1.0f/(4.0f*3.14f)* (1.0f - g*g)/ pow(1.0f + g * g - 2.0f * g * dot(lightDir,-viewDir), 1.5f);
+            
+            if (cosTheta > 0.9) {
+                I += clamp(10 * hg / n_steps, 0.0f, 1.0f);
+            }
+        }
+        pos += step;
+    }
+    I = clamp(I, 0.0f, 1.0f);
+    return I;
+}
