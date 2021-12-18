@@ -17,7 +17,6 @@ void RenderSkybox();
 void RenderSphere();
 
 // settings
-#define NR_POINT_LIGHTS 4
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
@@ -42,7 +41,7 @@ int main()
 
     // glfw window creation
     // --------------------
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "v2.0", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Nature v2.0", NULL, NULL);
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -73,27 +72,15 @@ int main()
     Shader SSAOBlurShader("../shader/ssao.vs", "../shader/ssao_blur.fs");
     Shader MainShader("../shader/ssao.vs", "../shader/PBR.fs");
     Shader screenShader("../shader/screen.vs", "../shader/screen.fs");
-    Shader skyboxShader("../shader/skybox.vs", "../shader/skybox.fs");
-    // Shader skyboxShader("../xres/vs/6.2.skybox.vs", "../xres/fs/6.2.skybox.fs");
     Shader shadowShader("../shader/shadow.vs", "../shader/shadow.fs");
     Shader blurShader("../shader/blur.vs", "../shader/blur.fs");
     Shader lightShader("../shader/light.vs", "../shader/light.fs");
-    Shader PointshadowShader("../shader/pointShadow.vs", "../shader/pointShadow.fs", "../shader/pointShadow.gs");
     Shader SkyDomeShader("../shader/SkyDomeShader.vs", "../shader/SkyDomeShader.fs");
 
     
-    glm::vec3 pointLightPositions[] = {
-        glm::vec3(10.0f,  10.0f,  10.0f),
-        glm::vec3(10.0f,  10.0f,  -10.0f),
-        glm::vec3(-10.0f,  10.0f,  10.0f),
-        glm::vec3(-10.0f,  10.0f,  -10.0f)
-    };
-    
-
     Model ourModel("../res/model/untitled.obj");
 
     DirShadow dirshadow;
-    PointShadow pointshadow[NR_POINT_LIGHTS];
     enum GBUFFER_TEXTURE_TYPE {
         GBUFFER_TEXTURE_POSITION,
         GBUFFER_TEXTURE_NORMAL,
@@ -190,7 +177,6 @@ int main()
     glm::vec3 SunColor(1.0f, 0.9f, 0.6f);
     glm::vec3 SunsetColor(1.0f, 0.7f, 0.5f);
     glm::vec3 DirColor = SunColor * glm::vec3(8.0f);
-    glm::vec3 PointColor = lightColor * glm::vec3(2.0f);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -285,20 +271,6 @@ int main()
 
         MainShader.setVec3("dirLight.position", DirLightPos);
         MainShader.setVec3("dirLight.color", DirColor);
-
-        for (int i = 0; i < NR_POINT_LIGHTS; i++)
-        {
-            std::string s = "pointLights[";
-
-            s.append(1, char(i + 48));
-            s.append("].");
-            MainShader.setVec3(s + std::string("position"), pointLightPositions[i]);
-            MainShader.setVec3(s + std::string("color"), PointColor);
-            MainShader.setFloat(s + std::string("constant"), 1.0f);
-            MainShader.setFloat(s + std::string("linear"), 0.09);
-            MainShader.setFloat(s + std::string("quadratic"), 0.032);
-        }
-
         MainShader.setVec3("viewPos", camera.Position);
         MainShader.setFloat("far_plane", far_plane);
         MainShader.setFloat("near_plane", near_plane);
@@ -312,33 +284,8 @@ int main()
         glActiveTexture(GL_TEXTURE4);
         glBindTexture(GL_TEXTURE_2D, dirshadow.depthMap);
 
-        for (int i = 0; i < NR_POINT_LIGHTS; i++)
-        {
-            MainShader.setInt(std::string(std::string("pointshadowMap[") + std::to_string(i) + "]").c_str(), 5 + i);
-            glActiveTexture(GL_TEXTURE5 + i);
-            glBindTexture(GL_TEXTURE_CUBE_MAP, pointshadow[i].depthCubemap);
-        }
-
         RenderQuad();
 
-        /*
-        lightShader.use();
-        model = glm::mat4(1.0f);
-        model = glm::translate(model, DirLightPos);
-        model = glm::scale(model, glm::vec3(3.0f, 3.0f, 3.0f));
-        lightShader.setMat4("model", model);
-        lightShader.setMat4("view", view);
-        lightShader.setMat4("projection", projection);
-        RenderSphere();
-
-        skyboxShader.use();
-        view = glm::mat4(glm::mat3(camera.GetViewMatrix()));
-        skyboxShader.setMat4("view", view);
-        skyboxShader.setMat4("projection", projection);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-        RenderSkybox();
-        */
 
         // 5.5. copy content of geometry's depth buffer to default framebuffer's depth buffer
         // ----------------------------------------------------------------------------------
@@ -374,7 +321,8 @@ int main()
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glDisable(GL_DEPTH_TEST); // disable depth test so screen-space quad isn't discarded due to depth test.
-        glClearColor(1.0f, 1.0f, 1.0f, 1.0f); // set clear color to white (not really necessary actually, since we won't be able to see behind the quad anyways)
+        // set clear color to white (not really necessary actually, since we won't be able to see behind the quad anyways)
+        glClearColor(1.0f, 1.0f, 1.0f, 1.0f); 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         screenShader.use();
@@ -391,7 +339,6 @@ int main()
         glfwPollEvents();
     }
     glfwTerminate();
-    std::cout << "Finish" << std::endl;
     return 0;
 }
 
