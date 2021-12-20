@@ -67,7 +67,7 @@ void Object::SetByVector(std::vector<GLfloat> data, std::vector<GLfloat> &target
 }
 void Object::SetByVectorVec3(std::vector<glm::vec3> data, std::vector<GLfloat> &targetData, GLuint &targetBuffer)
 {
-	for (int i = 0; i < data.size(); i++)
+	for (size_t i = 0; i < data.size(); i++)
 	{
 		targetData.push_back(data[i].x);
 		targetData.push_back(data[i].y);
@@ -77,7 +77,7 @@ void Object::SetByVectorVec3(std::vector<glm::vec3> data, std::vector<GLfloat> &
 }
 void Object::SetByVectorVec2(std::vector<glm::vec2> data, std::vector<GLfloat> &targetData, GLuint &targetBuffer)
 {
-	for (int i = 0; i < data.size(); i++)
+	for (size_t i = 0; i < data.size(); i++)
 	{
 		targetData.push_back(data[i].x);
 		targetData.push_back(data[i].y);
@@ -154,7 +154,7 @@ void Object::SetIndices(std::vector<unsigned int> indices)
 
 void Object::UpdateVertex(std::vector<glm::vec3> vertices)
 {
-	for (int i = 0; i < vertices.size(); i++)
+	for (size_t i = 0; i < vertices.size(); i++)
 	{
 		this->vertices[i * 3] = vertices[i].x;
 		this->vertices[i * 3 + 1] = vertices[i].y;
@@ -166,7 +166,7 @@ void Object::UpdateVertex(std::vector<glm::vec3> vertices)
 
 void Object::UpdateNormal(std::vector<glm::vec3> normals)
 {
-	for (int i = 0; i < normals.size(); i++)
+	for (size_t i = 0; i < normals.size(); i++)
 	{
 		this->normals[i * 3] = normals[i].x;
 		this->normals[i * 3 + 1] = normals[i].y;

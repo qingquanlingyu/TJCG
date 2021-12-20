@@ -80,11 +80,9 @@ Area::Area(int x_width, int z_width, float length_x, float length_z, int x_insta
 
 	for (int z = 0; z < z_instance; z++)
 	{
-		int a;
 		for (int x = 0; x < x_instance; x++)
 		{
 			instance_offset.push_back(glm::vec3(x * length_x,0, z * length_z));
-			int b;
 		}
 	}
 }

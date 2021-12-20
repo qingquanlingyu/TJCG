@@ -1,4 +1,4 @@
-#version 420 core
+#version 430 core
 #define MAX_WAVE_NUMBER 50
 #define MAX_INSTACE 100
 #define M_PI 3.1415926535897932384626433832795
