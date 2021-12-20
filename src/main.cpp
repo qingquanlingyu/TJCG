@@ -8,6 +8,9 @@
 #include "ssao.hpp"
 #include "SkyDome.h"
 
+#include "ocean.h"
+#include "object.h"
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -15,6 +18,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void RenderQuad();
 void RenderSkybox();
 void RenderSphere();
+void SendUniformMVP(glm::mat4 m, glm::mat4 v, glm::mat4 p);
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -74,10 +78,50 @@ int main()
     Shader screenShader("../shader/screen.vs", "../shader/screen.fs");
     Shader shadowShader("../shader/shadow.vs", "../shader/shadow.fs");
     Shader blurShader("../shader/blur.vs", "../shader/blur.fs");
-    Shader lightShader("../shader/light.vs", "../shader/light.fs");
     Shader SkyDomeShader("../shader/SkyDomeShader.vs", "../shader/SkyDomeShader.fs");
+    Shader OceanShader("../shader/vs_ocean.glsl", "../shader/fs_ocean.glsl");
 
-    
+    GLuint VertexArrayID;
+    glGenVertexArrays(1, &VertexArrayID);
+    glBindVertexArray(VertexArrayID);
+
+    Ocean oceanObj(32, 32, 24, 24, 3, 3);
+    Object oceanObjBuffer;
+    oceanObjBuffer.SetVertex(oceanObj.GetVertices());
+    oceanObjBuffer.SetNormal(oceanObj.GetNormals());
+    oceanObjBuffer.SetIndices(oceanObj.GetIndices());
+    GLuint mvp_uniform_block;
+    glGenBuffers(1, &mvp_uniform_block);
+    glBindBuffer(GL_UNIFORM_BUFFER, mvp_uniform_block);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(glm::mat4) * 3, NULL, GL_STATIC_DRAW);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, mvp_uniform_block);
+    std::vector<glm::vec3> instance_offset_vec3 = oceanObj.GetInstance_offset();
+    GLuint instance_offsetID = glGetUniformLocation(OceanShader.ID, "instance_offset");
+    GLuint h0_data_buffer;
+    glGenBuffers(1, &h0_data_buffer);
+    glBindBuffer(GL_TEXTURE_BUFFER, h0_data_buffer);
+    glBufferData(GL_TEXTURE_BUFFER, oceanObj.vVar.h0.size() * sizeof(float), &oceanObj.vVar.h0[0], GL_STATIC_DRAW);
+    GLuint h0_texID;
+    glGenTextures(1, &h0_texID);
+    glBindTexture(GL_TEXTURE_BUFFER, h0_texID);
+    glTexBuffer(GL_TEXTURE_BUFFER, GL_RG32F, h0_data_buffer);
+    GLuint h0Conj_data_buffer;
+    glGenBuffers(1, &h0Conj_data_buffer);
+    glBindBuffer(GL_TEXTURE_BUFFER, h0Conj_data_buffer);
+    glBufferData(GL_TEXTURE_BUFFER, oceanObj.vVar.h0Conj.size() * sizeof(float), &oceanObj.vVar.h0Conj[0], GL_STATIC_DRAW);
+    GLuint h0Conj_texID;
+    glGenTextures(1, &h0Conj_texID);
+    glBindTexture(GL_TEXTURE_BUFFER, h0Conj_texID);
+    glTexBuffer(GL_TEXTURE_BUFFER, GL_RG32F, h0Conj_data_buffer);
+    GLuint dispersion_data_buffer;
+    glGenBuffers(1, &dispersion_data_buffer);
+    glBindBuffer(GL_TEXTURE_BUFFER, dispersion_data_buffer);
+    glBufferData(GL_TEXTURE_BUFFER, oceanObj.vVar.dispersion.size() * sizeof(float), &oceanObj.vVar.dispersion[0], GL_STATIC_DRAW);
+    GLuint dispersion_texID;
+    glGenTextures(1, &dispersion_texID);
+    glBindTexture(GL_TEXTURE_BUFFER, dispersion_texID);
+    glTexBuffer(GL_TEXTURE_BUFFER, GL_R32F, dispersion_data_buffer);
+
     Model ourModel("../res/model/untitled.obj");
 
     DirShadow dirshadow;
@@ -98,6 +142,10 @@ int main()
     skydome->noisetexMap = loadTexture("../res/textures/noisetex.png");
 
 
+    OceanShader.use();
+    OceanShader.setInt("h0", 0);
+    OceanShader.setInt("h0Conj", 1);
+    OceanShader.setInt("dispersion", 2);
     screenShader.use();
     screenShader.setInt("hdrBuffer", 0);
     screenShader.setInt("bloomBlur", 1);
@@ -181,6 +229,7 @@ int main()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
+    glfwSetTime(0);
     while (!glfwWindowShouldClose(window))
     {
         float currentFrame = glfwGetTime();
@@ -195,17 +244,16 @@ int main()
         glm::vec3 DirLightPos = skydome->getSunPos() * glm::vec3(0.5f);
 
         if (DirLightPos.y >= 0) {
-            DirColor = SunColor * glm::vec3(7.5f * min(15.0f, DirLightPos.y) / 15.0) + 
+            DirColor = SunColor * glm::vec3(7.5f * min(15.0f, DirLightPos.y) / 15.0) +
                        SunsetColor * glm::vec3(2.5f * (15.0f - min(15.0f, DirLightPos.y)) / 15.0);
         } else {
             DirLightPos = -DirLightPos;
-            DirColor = lightColor * glm::vec3(2.0f * min(15.0f, DirLightPos.y) / 15.0) + 
+            DirColor = lightColor * glm::vec3(2.0f * min(15.0f, DirLightPos.y) / 15.0) +
                        lightColor * glm::vec3(1.0f * (15.0f - min(15.0f, DirLightPos.y)) / 15.0);
         }
 
         glEnable(GL_CULL_FACE);
         glCullFace(GL_FRONT);
-        // GLfloat aspect = (GLfloat)SHADOW_WIDTH / (GLfloat)SHADOW_HEIGHT;
         GLfloat near_plane = 0.1f, far_plane = 200.0f;
         glm::mat4 lightProjection, lightView;
         glm::mat4 lightSpaceMatrix;
@@ -269,6 +317,11 @@ int main()
         GLuint attachments[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
         glDrawBuffers(2, attachments);
 
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(0.0f, -0.5f, 0.0f));
+        //model = glm::rotate(model, glm::radians(270.0f), glm::vec3(1.0, 0.0, 0.0));
+        model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
+
         MainShader.setVec3("dirLight.position", DirLightPos);
         MainShader.setVec3("dirLight.color", DirColor);
         MainShader.setVec3("viewPos", camera.Position);
@@ -279,6 +332,7 @@ int main()
         MainShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
         MainShader.setMat4("projection", projection);
         MainShader.setMat4("view", view);
+        MainShader.setMat4("model", model);
 
         m_ssao->ActivateTextureForLight();
         glActiveTexture(GL_TEXTURE4);
@@ -301,7 +355,55 @@ int main()
         skydome->setCameraPos(camera.Position);
         skydome->drawSkyDome(SkyDomeShader, projection, view);
         
-    
+        glEnable(GL_PROGRAM_POINT_SIZE);
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+        //glDisable(GL_DEPTH_TEST);
+        glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
+
+        OceanShader.use();
+        OceanShader.setFloat("time", (float)glfwGetTime());
+        OceanShader.setInt("N", oceanObj.GetWidth_X());
+        OceanShader.setInt("M", oceanObj.GetWidth_Z());
+        OceanShader.setFloat("LengthX", oceanObj.LengthX);
+        OceanShader.setFloat("LengthZ", oceanObj.LengthZ);
+        OceanShader.setVec3("DirectionalLight_direction_worldspace", -1, -1, -1);
+        // h_0
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_BUFFER, h0_texID);
+
+        // h_0*
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_BUFFER, h0Conj_texID);
+
+        // dispersion
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_BUFFER, dispersion_texID);
+
+        OceanShader.setVec3("LightPosition_worldspace", DirLightPos); //光源位置
+        OceanShader.setVec3("EyePosition", camera.Position);       //视角（摄像机的位置）
+        OceanShader.setVec3("LightColor", DirColor);
+        glUniform3fv(instance_offsetID, instance_offset_vec3.size(), &instance_offset_vec3[0].x);
+
+        glBindBuffer(GL_UNIFORM_BUFFER, mvp_uniform_block);
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(-20.0f, 0.0f, -18.0f));
+        //model = glm::rotate(model, glm::radians(270.0f), glm::vec3(1.0, 0.0, 0.0));
+        model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
+        shadowShader.setMat4("model", model);
+        SendUniformMVP(model, view, projection);
+
+        glBindVertexArray(VertexArrayID);
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, oceanObjBuffer.vertices_buffer);
+
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, oceanObjBuffer.indices_buffer);
+        glDrawElementsInstanced(GL_TRIANGLES, oceanObj.GetIndices().size(), GL_UNSIGNED_INT, (void*)0, instance_offset_vec3.size());
+        glDisable(GL_PROGRAM_POINT_SIZE);
+        glDisable(GL_CULL_FACE);
+
         // 7. final screen render: bloom and hdr (and fxaa)
         // ----------------------------------------------------------------------------------
         GLboolean horizontal = true, first_iteration = true;
@@ -322,7 +424,7 @@ int main()
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glDisable(GL_DEPTH_TEST); // disable depth test so screen-space quad isn't discarded due to depth test.
         // set clear color to white (not really necessary actually, since we won't be able to see behind the quad anyways)
-        glClearColor(1.0f, 1.0f, 1.0f, 1.0f); 
+        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         screenShader.use();
@@ -339,6 +441,7 @@ int main()
         glfwPollEvents();
     }
     glfwTerminate();
+    std::cout << "Finish" << std::endl;
     return 0;
 }
 
@@ -570,3 +673,14 @@ void RenderSphere()
     glBindVertexArray(0);
 }
 
+void SendUniformMVP(glm::mat4 m, glm::mat4 v, glm::mat4 p)
+{
+
+    glm::mat4 projection = p;
+    glm::mat4 view = v;
+    glm::mat4 model = m;
+
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), &model[0][0]);
+    glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), &view[0][0]);
+    glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4) * 2, sizeof(glm::mat4), &projection[0][0]);
+}
