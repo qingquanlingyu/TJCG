@@ -139,7 +139,7 @@ int main()
     skydome->tint2Map = loadTexture("../res/textures/physky/tint2.png");
     skydome->moonMap = loadTexture("../res/textures/physky/moon.png");
     skydome->sunMap = loadTexture("../res/textures/physky/sun.png");
-    skydome->noisetexMap = loadTexture("../res/textures/noisetex.png");
+    skydome->noisetexMap = loadTexture("../res/textures/physky/noisetex.png");
 
 
     OceanShader.use();
