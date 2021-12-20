@@ -8,6 +8,9 @@
 #include "ssao.hpp"
 #include "SkyDome.h"
 
+#include "ocean.h"
+#include "object.h"
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -15,6 +18,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void RenderQuad();
 void RenderSkybox();
 void RenderSphere();
+void SendUniformMVP();
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -181,6 +185,82 @@ int main()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
+
+    //----------------------------------------------------------------------
+    Shader OceanShader("../shader/vs_ocean.glsl", "../shader/fs_ocean.glsl");
+
+    GLuint VertexArrayID;
+    glGenVertexArrays(1, &VertexArrayID);
+    std::cout << glGetError() << std::endl; // 返回 0 (无错误)
+
+    glBindVertexArray(VertexArrayID);
+std::cout << glGetError() << std::endl; // 返回 0 (无错误)
+
+    Ocean oceanObj(128, 128, 40, 40, 3, 3);
+    Object oceanObjBuffer;
+    oceanObjBuffer.SetVertex(oceanObj.GetVertices());
+std::cout << glGetError() << std::endl; // 返回 0 (无错误)
+    oceanObjBuffer.SetNormal(oceanObj.GetNormals());
+std::cout << glGetError() << std::endl; // 返回 0 (无错误)
+    oceanObjBuffer.SetIndices(oceanObj.GetIndices());
+std::cout << glGetError() << std::endl; // 返回 0 (无错误)
+
+    GLuint mvp_uniform_block;
+    glGenBuffers(1, &mvp_uniform_block);
+std::cout << glGetError() << std::endl; // 返回 0 (无错误)
+    glBindBuffer(GL_UNIFORM_BUFFER, mvp_uniform_block);
+std::cout << glGetError() << std::endl; // 返回 0 (无错误)
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(glm::mat4) * 3, NULL, GL_STATIC_DRAW);
+std::cout << glGetError() << std::endl; // 返回 0 (无错误)
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, mvp_uniform_block);
+std::cout << glGetError() << std::endl; // 返回 0 (无错误)
+
+    std::vector<glm::vec3> instance_offset_vec3 = oceanObj.GetInstance_offset();
+
+    GLuint instance_offsetID = glGetUniformLocation(OceanShader.ID, "instance_offset");
+std::cout << glGetError() << std::endl; // 返回 0 (无错误)
+
+    // h0
+    GLuint h0_uniform = glGetUniformLocation(OceanShader.ID, "h0");
+    GLuint h0_data_buffer;
+    glGenBuffers(1, &h0_data_buffer);
+std::cout << glGetError() << std::endl; // 返回 0 (无错误)
+    glBindBuffer(GL_TEXTURE_BUFFER, h0_data_buffer);
+    glBufferData(GL_TEXTURE_BUFFER, oceanObj.vVar.h0.size() * sizeof(float), &oceanObj.vVar.h0[0], GL_STATIC_DRAW);
+
+    GLuint h0_texID;
+    glGenTextures(1, &h0_texID);
+    glBindTexture(GL_TEXTURE_BUFFER, h0_texID);
+    glTexBuffer(GL_TEXTURE_BUFFER, GL_RG32F, h0_data_buffer);
+
+    // h0Conj
+    GLuint h0Conj_uniform = glGetUniformLocation(OceanShader.ID, "h0Conj");
+    GLuint h0Conj_data_buffer;
+    glGenBuffers(1, &h0Conj_data_buffer);
+    glBindBuffer(GL_TEXTURE_BUFFER, h0Conj_data_buffer);
+    glBufferData(GL_TEXTURE_BUFFER, oceanObj.vVar.h0Conj.size() * sizeof(float), &oceanObj.vVar.h0Conj[0], GL_STATIC_DRAW);
+
+    GLuint h0Conj_texID;
+    glGenTextures(1, &h0Conj_texID);
+    glBindTexture(GL_TEXTURE_BUFFER, h0Conj_texID);
+    glTexBuffer(GL_TEXTURE_BUFFER, GL_RG32F, h0Conj_data_buffer);
+
+    // dispersion
+    GLuint dispersion_uniform = glGetUniformLocation(OceanShader.ID, "dispersion");
+    GLuint dispersion_data_buffer;
+    glGenBuffers(1, &dispersion_data_buffer);
+    glBindBuffer(GL_TEXTURE_BUFFER, dispersion_data_buffer);
+    glBufferData(GL_TEXTURE_BUFFER, oceanObj.vVar.dispersion.size() * sizeof(float), &oceanObj.vVar.dispersion[0], GL_STATIC_DRAW);
+
+    GLuint dispersion_texID;
+    glGenTextures(1, &dispersion_texID);
+    glBindTexture(GL_TEXTURE_BUFFER, dispersion_texID);
+    glTexBuffer(GL_TEXTURE_BUFFER, GL_R32F, dispersion_data_buffer);
+
+    //------------------------------------------------------------------------
+
+
+
     while (!glfwWindowShouldClose(window))
     {
         float currentFrame = glfwGetTime();
@@ -193,146 +273,185 @@ int main()
         // 1. render depth of scene to texture (from light's perspective)
         // --------------------------------------------------------------
         glm::vec3 DirLightPos = skydome->getSunPos() * glm::vec3(0.5f);
+        //
+        // if (DirLightPos.y >= 0) {
+        //     DirColor = SunColor * glm::vec3(7.5f * min(15.0f, DirLightPos.y) / 15.0) +
+        //                SunsetColor * glm::vec3(2.5f * (15.0f - min(15.0f, DirLightPos.y)) / 15.0);
+        // } else {
+        //     DirLightPos = -DirLightPos;
+        //     DirColor = lightColor * glm::vec3(2.0f * min(15.0f, DirLightPos.y) / 15.0) +
+        //                lightColor * glm::vec3(1.0f * (15.0f - min(15.0f, DirLightPos.y)) / 15.0);
+        // }
+        //
+        // glEnable(GL_CULL_FACE);
+        // glCullFace(GL_FRONT);
+        // // GLfloat aspect = (GLfloat)SHADOW_WIDTH / (GLfloat)SHADOW_HEIGHT;
+        // GLfloat near_plane = 0.1f, far_plane = 200.0f;
+        // glm::mat4 lightProjection, lightView;
+        // glm::mat4 lightSpaceMatrix;
+        // lightProjection = glm::ortho(-50.0f, 50.0f, -50.0f, 50.0f, near_plane, 100.0f);
+        // lightView = glm::lookAt(DirLightPos, glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
+        // lightSpaceMatrix = lightProjection * lightView;
+        // shadowShader.use();
+        // shadowShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
+        //
+        // glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+        // dirshadow.Bind();
+        // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        //
+        // glm::mat4 model = glm::mat4(1.0f);
+        // model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
+        // //model = glm::rotate(model, glm::radians(270.0f), glm::vec3(1.0, 0.0, 0.0));
+        // model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
+        // shadowShader.setMat4("model", model);
+        // ourModel.Draw(shadowShader);
+        //
+        // glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+        // glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, near_plane, far_plane);
+        // glm::mat4 view = camera.GetViewMatrix();
+        //
+        // // 2. geometry pass: render scene's geometry/color data into gbuffer
+        // // -----------------------------------------------------------------
+        // glDisable(GL_CULL_FACE);
+        // m_ssao->BindGbuffer();
+        // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        // shaderGeometryPass.use();
+        // shaderGeometryPass.setMat4("model", model);
+        // shaderGeometryPass.setMat4("projection", projection);
+        // shaderGeometryPass.setMat4("view", view);
+        // shaderGeometryPass.setBool("invertedNormals", false);
+        // ourModel.Draw(shaderGeometryPass);
+        //
+        // // 3. generate SSAO texture
+        // // ------------------------
+        // m_ssao->BindSSAOFBO();
+        // glClear(GL_COLOR_BUFFER_BIT);
+        // SSAOshader.use();
+        // m_ssao->ActivateSSAOTexture(SSAOshader);
+        // SSAOshader.setMat4("projection", projection);
+        // view = camera.GetViewMatrix();
+        // SSAOshader.setMat4("view", view);
+        // RenderQuad();
+        //
+        // // 4. blur SSAO texture to remove noise
+        // // ------------------------------------
+        // m_ssao->BindSSAOBlurFBO();
+        // glClear(GL_COLOR_BUFFER_BIT);
+        // SSAOBlurShader.use();
+        // m_ssao->ActivateSSAOBlurTexture(SSAOBlurShader);
+        // RenderQuad();
+        //
+        // // 5. PBR main render using GBuffer and SSAO
+        // // ------------------------------------
+        // glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
+        // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        // MainShader.use();
+        // GLuint attachments[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+        // glDrawBuffers(2, attachments);
+        //
+        // MainShader.setVec3("dirLight.position", DirLightPos);
+        // MainShader.setVec3("dirLight.color", DirColor);
+        // MainShader.setVec3("viewPos", camera.Position);
+        // MainShader.setFloat("far_plane", far_plane);
+        // MainShader.setFloat("near_plane", near_plane);
+        // MainShader.setFloat("metal", 0.0);
+        // MainShader.setFloat("rough", 0.5);
+        // MainShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
+        // MainShader.setMat4("projection", projection);
+        // MainShader.setMat4("view", view);
+        //
+        // m_ssao->ActivateTextureForLight();
+        // glActiveTexture(GL_TEXTURE4);
+        // glBindTexture(GL_TEXTURE_2D, dirshadow.depthMap);
+        //
+        // RenderQuad();
+        //
+        //
+        // // 5.5. copy content of geometry's depth buffer to default framebuffer's depth buffer
+        // // ----------------------------------------------------------------------------------
+        // m_ssao->BindGBufferForReading();
+        // glBindFramebuffer(GL_DRAW_FRAMEBUFFER, hdrFBO);
+        // glBlitFramebuffer(0, 0, SCR_WIDTH, SCR_HEIGHT, 0, 0, SCR_WIDTH, SCR_HEIGHT, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+        // glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
+        //
+        //
+        // // 6. render skydome
+        // // ----------------------------------------------------------------------------------
+        // //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        // skydome->setCameraPos(camera.Position);
+        // skydome->drawSkyDome(SkyDomeShader, projection, view);
+        //
+    //
+        // // 7. final screen render: bloom and hdr (and fxaa)
+        // // ----------------------------------------------------------------------------------
+        // GLboolean horizontal = true, first_iteration = true;
+        // GLuint amount = 10;
+        // blurShader.use();
+        // glActiveTexture(GL_TEXTURE0);
+        // for (GLuint i = 0; i < amount; i++)
+        // {
+        //     glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[horizontal]);
+        //     blurShader.setInt("horizontal", horizontal);
+        //     glBindTexture(GL_TEXTURE_2D, first_iteration ? colorBuffers[1] : pingpongBuffer[!horizontal]);
+        //     RenderQuad();
+        //     horizontal = !horizontal;
+        //     if (first_iteration)
+        //         first_iteration = false;
+        // }
+        //
+        // glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        // glDisable(GL_DEPTH_TEST); // disable depth test so screen-space quad isn't discarded due to depth test.
+        // // set clear color to white (not really necessary actually, since we won't be able to see behind the quad anyways)
+        // glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        //
+        // screenShader.use();
+        // screenShader.setFloat("exposure", exposure);
+        // screenShader.setVec2("texelStep", glm::vec2(1.0f / SCR_WIDTH, 1.0f / SCR_HEIGHT));
+        // glActiveTexture(GL_TEXTURE0);
+        // glBindTexture(GL_TEXTURE_2D, colorBuffers[0]);
+        // glActiveTexture(GL_TEXTURE1);
+        // glBindTexture(GL_TEXTURE_2D, pingpongBuffer[1]);
+        // RenderQuad();
 
-        if (DirLightPos.y >= 0) {
-            DirColor = SunColor * glm::vec3(7.5f * min(15.0f, DirLightPos.y) / 15.0) + 
-                       SunsetColor * glm::vec3(2.5f * (15.0f - min(15.0f, DirLightPos.y)) / 15.0);
-        } else {
-            DirLightPos = -DirLightPos;
-            DirColor = lightColor * glm::vec3(2.0f * min(15.0f, DirLightPos.y) / 15.0) + 
-                       lightColor * glm::vec3(1.0f * (15.0f - min(15.0f, DirLightPos.y)) / 15.0);
-        }
+        // 8. ocean
+        OceanShader.use();
 
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_FRONT);
-        // GLfloat aspect = (GLfloat)SHADOW_WIDTH / (GLfloat)SHADOW_HEIGHT;
-        GLfloat near_plane = 0.1f, far_plane = 200.0f;
-        glm::mat4 lightProjection, lightView;
-        glm::mat4 lightSpaceMatrix;
-        lightProjection = glm::ortho(-50.0f, 50.0f, -50.0f, 50.0f, near_plane, 100.0f);
-        lightView = glm::lookAt(DirLightPos, glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
-        lightSpaceMatrix = lightProjection * lightView;
-        shadowShader.use();
-        shadowShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
-
-        glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
-        dirshadow.Bind();
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
-        //model = glm::rotate(model, glm::radians(270.0f), glm::vec3(1.0, 0.0, 0.0));
-        model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
-        shadowShader.setMat4("model", model);
-        ourModel.Draw(shadowShader);
-
-        glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
-        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, near_plane, far_plane);
-        glm::mat4 view = camera.GetViewMatrix();
-
-        // 2. geometry pass: render scene's geometry/color data into gbuffer
-        // -----------------------------------------------------------------
-        glDisable(GL_CULL_FACE);
-        m_ssao->BindGbuffer();
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        shaderGeometryPass.use();
-        shaderGeometryPass.setMat4("model", model);
-        shaderGeometryPass.setMat4("projection", projection);
-        shaderGeometryPass.setMat4("view", view);
-        shaderGeometryPass.setBool("invertedNormals", false);
-        ourModel.Draw(shaderGeometryPass);
-
-        // 3. generate SSAO texture
-        // ------------------------
-        m_ssao->BindSSAOFBO();
-        glClear(GL_COLOR_BUFFER_BIT);
-        SSAOshader.use();
-        m_ssao->ActivateSSAOTexture(SSAOshader);
-        SSAOshader.setMat4("projection", projection);
-        view = camera.GetViewMatrix();
-        SSAOshader.setMat4("view", view);
-        RenderQuad();
-
-        // 4. blur SSAO texture to remove noise
-        // ------------------------------------
-        m_ssao->BindSSAOBlurFBO();
-        glClear(GL_COLOR_BUFFER_BIT);
-        SSAOBlurShader.use();
-        m_ssao->ActivateSSAOBlurTexture(SSAOBlurShader);
-        RenderQuad();
-
-        // 5. PBR main render using GBuffer and SSAO
-        // ------------------------------------
-        glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        MainShader.use();
-        GLuint attachments[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-        glDrawBuffers(2, attachments);
-
-        MainShader.setVec3("dirLight.position", DirLightPos);
-        MainShader.setVec3("dirLight.color", DirColor);
-        MainShader.setVec3("viewPos", camera.Position);
-        MainShader.setFloat("far_plane", far_plane);
-        MainShader.setFloat("near_plane", near_plane);
-        MainShader.setFloat("metal", 0.0);
-        MainShader.setFloat("rough", 0.5);
-        MainShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
-        MainShader.setMat4("projection", projection);
-        MainShader.setMat4("view", view);
-
-        m_ssao->ActivateTextureForLight();
-        glActiveTexture(GL_TEXTURE4);
-        glBindTexture(GL_TEXTURE_2D, dirshadow.depthMap);
-
-        RenderQuad();
-
-
-        // 5.5. copy content of geometry's depth buffer to default framebuffer's depth buffer
-        // ----------------------------------------------------------------------------------
-        m_ssao->BindGBufferForReading();
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, hdrFBO);
-        glBlitFramebuffer(0, 0, SCR_WIDTH, SCR_HEIGHT, 0, 0, SCR_WIDTH, SCR_HEIGHT, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-        glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
-
-
-        // 6. render skydome
-        // ----------------------------------------------------------------------------------
-        //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        skydome->setCameraPos(camera.Position);
-        skydome->drawSkyDome(SkyDomeShader, projection, view);
-        
-    
-        // 7. final screen render: bloom and hdr (and fxaa)
-        // ----------------------------------------------------------------------------------
-        GLboolean horizontal = true, first_iteration = true;
-        GLuint amount = 10;
-        blurShader.use();
+        OceanShader.setFloat("time", (float)glfwGetTime());
+        OceanShader.setInt("N", oceanObj.GetWidth_X());
+        OceanShader.setInt("M", oceanObj.GetWidth_Z());
+        OceanShader.setFloat("LengthX", oceanObj.LengthX);
+        OceanShader.setFloat("LengthZ", oceanObj.LengthZ);
+        OceanShader.setVec3("DirectionalLight_direction_worldspace",-1,-1,-1);
+        // h_0
         glActiveTexture(GL_TEXTURE0);
-        for (GLuint i = 0; i < amount; i++)
-        {
-            glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[horizontal]);
-            blurShader.setInt("horizontal", horizontal);
-            glBindTexture(GL_TEXTURE_2D, first_iteration ? colorBuffers[1] : pingpongBuffer[!horizontal]);
-            RenderQuad();
-            horizontal = !horizontal;
-            if (first_iteration)
-                first_iteration = false;
-        }
+        glBindTexture(GL_TEXTURE_BUFFER, h0_texID);
+        glUniform1i(h0_uniform, 0);
 
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glDisable(GL_DEPTH_TEST); // disable depth test so screen-space quad isn't discarded due to depth test.
-        // set clear color to white (not really necessary actually, since we won't be able to see behind the quad anyways)
-        glClearColor(1.0f, 1.0f, 1.0f, 1.0f); 
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        screenShader.use();
-        screenShader.setFloat("exposure", exposure);
-        screenShader.setVec2("texelStep", glm::vec2(1.0f / SCR_WIDTH, 1.0f / SCR_HEIGHT));
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, colorBuffers[0]);
+        // h_0*
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, pingpongBuffer[1]);
-        RenderQuad();
+        glBindTexture(GL_TEXTURE_BUFFER, h0Conj_texID);
+        glUniform1i(h0Conj_uniform, 1);
+
+        // dispersion
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_BUFFER, dispersion_texID);
+        glUniform1i(dispersion_uniform, 2);
+
+        OceanShader.setVec3("LightPosition_worldspace", DirLightPos); //光源位置
+        OceanShader.setVec3("EyePosition", camera.Position);       //视角（摄像机的位置）
+        glUniform3fv(instance_offsetID, instance_offset_vec3.size(), &instance_offset_vec3[0].x);
+
+        glBindBuffer(GL_UNIFORM_BUFFER, mvp_uniform_block);
+        SendUniformMVP();
+
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, oceanObjBuffer.vertices_buffer);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, oceanObjBuffer.indices_buffer);
+        glDrawElementsInstanced(GL_TRIANGLES, oceanObj.GetIndices().size(), GL_UNSIGNED_INT, (void *)0, instance_offset_vec3.size());
+
 
 
         glfwSwapBuffers(window);
@@ -570,3 +689,22 @@ void RenderSphere()
     glBindVertexArray(0);
 }
 
+glm::mat4 getProjectionMatrix()
+{
+    //获取投影矩阵
+    glm::mat4 ProjectionMatrix = glm::perspective(
+        glm::radians((float)45), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 200.0f);
+    return ProjectionMatrix;
+}
+
+void SendUniformMVP()
+{
+
+    glm::mat4 projection = getProjectionMatrix();
+    glm::mat4 view = camera.GetViewMatrix();
+    glm::mat4 model = glm::mat4(1);
+
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), &model[0][0]);
+    glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), &view[0][0]);
+    glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4) * 2, sizeof(glm::mat4), &projection[0][0]);
+}
