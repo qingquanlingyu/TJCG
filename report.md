@@ -51,7 +51,7 @@
     
     下面为着色器中的代码实现：
 
-    <img src="https://raw.githubusercontent.com/yuanyangwangTJ/Picture/master/img/20220102223123.png" alt="image-20220102223116144" style="zoom: 80%;" align="left"/>
+    <p><img src="https://raw.githubusercontent.com/yuanyangwangTJ/Picture/master/img/20220102223123.png" alt="image-20220102223116144" style="zoom: 80%;" align="left"/></p>
     
     ----
     
@@ -96,21 +96,26 @@
 
 <img src="https://raw.githubusercontent.com/yuanyangwangTJ/Picture/master/img/20220102224727.png" alt="image-20220102224726839" style="zoom:80%;" align="left"/></img>
 
+
 2. 下为模型的俯瞰图：
 
 <img src="https://raw.githubusercontent.com/yuanyangwangTJ/Picture/master/img/20220102224920.png" alt="image-20220102224920271" style="zoom:80%;" align="left"/>
+
 
 3. 海上升明月，如下：
 
 <img src="https://raw.githubusercontent.com/yuanyangwangTJ/Picture/master/img/20220102225053.png" alt="image-20220102225053439" style="zoom:80%;" align="left"/>
 
+
 4. 下图较为全面展示了效果，建筑、自然场景、明月、物理天空、水面以及明显的体积光效果:
 
 <img src="https://raw.githubusercontent.com/yuanyangwangTJ/Picture/master/img/20220102225216.png" alt="image-20220102225216379" style="zoom:80%;" align="left"/>
 
+
 5. 物理天空特写，如下：
 
 <img src="https://raw.githubusercontent.com/yuanyangwangTJ/Picture/master/img/20220102225409.png" alt="image-20220102225408996"  align="left" style="zoom:80%;" />
+
 
 ----
 
