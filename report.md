@@ -94,7 +94,7 @@
 
 1. 下图展示了强烈的体积光效果：
 
-<img src="https://raw.githubusercontent.com/yuanyangwangTJ/Picture/master/img/20220102224727.png" alt="image-20220102224726839" style="zoom:80%;" align="left"/>
+<img src="https://raw.githubusercontent.com/yuanyangwangTJ/Picture/master/img/20220102224727.png" alt="image-20220102224726839" style="zoom:80%;" align="left"/></img>
 
 2. 下为模型的俯瞰图：
 
@@ -110,7 +110,7 @@
 
 5. 物理天空特写，如下：
 
-<img src="https://raw.githubusercontent.com/yuanyangwangTJ/Picture/master/img/20220102225409.png" alt="image-20220102225408996" style="zoom:80%;" align="left"/>
+<img src="https://raw.githubusercontent.com/yuanyangwangTJ/Picture/master/img/20220102225409.png" alt="image-20220102225408996"  align="left" style="zoom:80%;" />
 
 ----
 
