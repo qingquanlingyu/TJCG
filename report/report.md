@@ -41,36 +41,28 @@
 1. 延迟渲染 + SSAO
     为了实现更好的模型加载效果，尤其是对于模型褶皱、孔洞和非常靠近的墙面变暗的方法近似模拟出间接光照，引入了屏幕空间环境光遮蔽（SSAO）技术。由于SSAO与延迟渲染完美兼容，因此，在延迟着色的基础之上引入SSAO技术。通过G缓冲获取几何体的信息，通过法向半球以及随机核心转动的采样计算SSAO，并且添加环境遮蔽模糊为呈现更好的视觉效果，以此实现SSAO效果。
 
-    ----
-
 2. 体积光
     模拟自然环境，体积光自然是必不可少的效果。自然场景中的烟、雾、光、云等产生的效果可以通过图形学的方式来实现。体积光的实现采用着色器绘制的方式，即在着色器中计算体积光的光路效果。本次使用的是Ray-Match的方式来实现体积光，通过采样步长来计算效果。为了模拟太阳光这样的光源的效果，加入大气散射的效果，即Mie散射，计算的公式如下：
     $$
     f_{HG}(\theta)=\frac{(1-g)^2}{4\pi (1+g^2-2g\cdot cos(\theta))^{3/2}}
     $$
-    
-    ----
 
 3. PBR渲染
     PBR基于物理的渲染采用粗糙度与金属度作为输入，使用更复杂的BRDF模型，能够提供更为真实的光照效果。程序采用经典的Cook-Torrance反射率方程实现PBR，并支持导入由Bitmap2Material软件生成的粗糙度贴图提供更加精细的粗糙度输入。
 
-    ----
-
 4. 阴影
     程序使用shadow mapping技术实现阴影，包含了基本的定向光阴影和基于立方体贴图的点光源阴影，并使用PCF实现软阴影。
-    
-    ----
 
 5. 后处理效果
     使用多种后处理效果提升画面表现力：
     
-    (1)HDR：主渲染阶段在高动态范围内完成，在后期处理阶段中，使用Reinhard色调映射映射回低动态范围，从而保留更多的明暗信息。
+    (1) HDR：主渲染阶段在高动态范围内完成，在后期处理阶段中，使用Reinhard色调映射映射回低动态范围，从而保留更多的明暗信息。
     
-    (2)辉光：在HDR技术的基础上，在主渲染阶段保存渲染结果中高亮度的部分，经过多次两步高斯模糊后，在后期处理阶段中与原渲染结果混合。程序采用双线性纹理的方式加速高斯模糊，并可在后期处理着色器中通过设定系数的方式调整两种不同效果的混合方式的强度，来调整辉光的具体效果。
+    (2) 辉光：在HDR技术的基础上，在主渲染阶段保存渲染结果中高亮度的部分，经过多次两步高斯模糊后，在后期处理阶段中与原渲染结果混合。程序采用双线性纹理的方式加速高斯模糊，并可在后期处理着色器中通过设定系数的方式调整两种不同效果的混合方式的强度，来调整辉光的具体效果。
     
-    (3)FXAA：受制于延迟渲染的特性，无法使用MSAA完成抗锯齿工作，因此采用基于后处理的FXAA技术完成抗锯齿。FXAA通过NVIDIA提供的公式工作，原理是在渲染完成后的屏幕图像中，通过像素颜色检测边缘，并由此完成不同程度的模糊完成抗锯齿。
+    (3) FXAA：受制于延迟渲染的特性，无法使用MSAA完成抗锯齿工作，因此采用基于后处理的FXAA技术完成抗锯齿。FXAA通过NVIDIA提供的公式工作，原理是在渲染完成后的屏幕图像中，通过像素颜色检测边缘，并由此完成不同程度的模糊完成抗锯齿。
     
-    (4)景深：主流渲染软件均提供景深效果用于模拟摄像机焦距以强调目标，本程序同样设计了简单的景深流程以削弱天空背景与场景间的对立感。在主渲染阶段中将片段(像素)的相机坐标系深度通过a通道传递到后期处理阶段。在后期处理阶段，根据a通道的值，对不同深度的像素进行不同范围的简单线性平均，并通过简单深度差值过滤的方式防止不同深度的物体颜色出现混合。为提高速度，根据实际渲染需要，景深与FXAA不同时进行。
+    (4) 景深：主流渲染软件均提供景深效果用于模拟摄像机焦距以强调目标，本程序同样设计了简单的景深流程以削弱天空背景与场景间的对立感。在主渲染阶段中将片段(像素)的相机坐标系深度通过a通道传递到后期处理阶段。在后期处理阶段，根据a通道的值，对不同深度的像素进行不同范围的简单线性平均，并通过简单深度差值过滤的方式防止不同深度的物体颜色出现混合。为提高速度，根据实际渲染需要，景深与FXAA不同时进行。
 
 # Project contents
 
@@ -81,11 +73,9 @@
 3. 物理天空穹顶变换，体积云随着时间发生变换，并且云层会产生流动效果。
 4. 波动的水面，模拟自然的水面跟随光照的变化而变换。
 
-
 # Implementation
 
 ## 物理天空
-
 #### 1. 球体绘制以及重要参数
 
 SkyDome和传统SkyBox不同的是，SkyDome使用一个球体来渲染天空，因此能实现太阳月亮的位置随时间变化。重要参数包括天气weather（决定云层厚度）、当前时间（决定天空底色）以及太阳位置（用于绘制太阳和月亮）
@@ -100,9 +90,9 @@ SkyDome和传统SkyBox不同的是，SkyDome使用一个球体来渲染天空，
 
 读取厚薄两种云层，根据天气变量weather对两者进行混合
 
-   ```glsl
-   float transparency = mix(texture(clouds2,vec2(u,v)).r,texture(clouds1,vec2(u,v)).r,(weather-0.5)*2.0);
-   ```
+```glsl
+float transparency = mix(texture(clouds2,vec2(u,v)).r,texture(clouds1,vec2(u,v)).r,(weather-0.5)*2.0);
+```
 
 <img src="pic/clouds1.png" alt="cloud1"  width="350px"/><img src="pic/clouds2.png" alt="cloud2"  width="350px"/>
 
@@ -125,9 +115,6 @@ SkyDome和传统SkyBox不同的是，SkyDome使用一个球体来渲染天空，
 <img src="pic/skydome_result_1.png" alt="skydome_result" width="350px"/> <img src="pic/skydome_result_2.png" alt="skydome_result" width="350px"/>
 
 <img src="pic/skydome_result_3.png" alt="skydome_result" width="350px"/>
-
-
-
 
 ### 体积云
 
@@ -174,7 +161,7 @@ for(int i=0; i<100; i++) {
 ## 体积光
 体积光的原理已经在上面分析，下面是核心实现代码，如下：
 
-<img src="https://raw.githubusercontent.com/yuanyangwangTJ/Picture/master/img/20220102223123.png" alt="image-20220102223116144" style="zoom: 80%;" align="left"/>
+<img src="https://raw.githubusercontent.com/yuanyangwangTJ/Picture/master/img/20220102223123.png" alt="image-20220102223116144" style="zoom: 67%;"/>
 
 ----
 
@@ -184,27 +171,27 @@ for(int i=0; i<100; i++) {
 
 1. 下图展示了强烈的体积光效果：
 
-<img src="https://raw.githubusercontent.com/yuanyangwangTJ/Picture/master/img/20220102224727.png" alt="image-20220102224726839" style="zoom:80%;" align="left"/></img>
+<img src="https://raw.githubusercontent.com/yuanyangwangTJ/Picture/master/img/20220102224727.png" alt="image-20220102224726839" style="zoom:67%;"/></img>
 
 
 2. 下为模型的俯瞰图：
 
-<img src="https://raw.githubusercontent.com/yuanyangwangTJ/Picture/master/img/20220102224920.png" alt="image-20220102224920271" style="zoom:80%;" align="left"/>
+<img src="https://raw.githubusercontent.com/yuanyangwangTJ/Picture/master/img/20220102224920.png" alt="image-20220102224920271" style="zoom:67%;"/>
 
 
 3. 海上升明月，如下：
 
-<img src="https://raw.githubusercontent.com/yuanyangwangTJ/Picture/master/img/20220102225053.png" alt="image-20220102225053439" style="zoom:80%;" align="left"/>
+<img src="https://raw.githubusercontent.com/yuanyangwangTJ/Picture/master/img/20220102225053.png" alt="image-20220102225053439" style="zoom:67%;"/>
 
 
 4. 下图较为全面展示了效果，建筑、自然场景、明月、物理天空、水面以及明显的体积光效果:
 
-<img src="https://raw.githubusercontent.com/yuanyangwangTJ/Picture/master/img/20220102225216.png" alt="image-20220102225216379" style="zoom:80%;" align="left"/>
+<img src="https://raw.githubusercontent.com/yuanyangwangTJ/Picture/master/img/20220102225216.png" alt="image-20220102225216379" style="zoom:67%;"/>
 
 
 5. 物理天空特写，如下：
 
-<img src="https://raw.githubusercontent.com/yuanyangwangTJ/Picture/master/img/20220102225409.png" alt="image-20220102225408996"  align="left" style="zoom:80%;" />
+<img src="https://raw.githubusercontent.com/yuanyangwangTJ/Picture/master/img/20220102225409.png" alt="image-20220102225408996"   style="zoom:67%;" />
 
 ----
 
@@ -223,5 +210,7 @@ for(int i=0; i<100; i++) {
 
 # References
 [1] [learnopengl](https://learnopengl.com/)
+
 [2] [volume light rendering](https://stackoverflow.com/questions/65784612/volumetric-light-not-rendering-volume-correctly)
+
 [3] [体积光效果实现](https://blog.csdn.net/ZJU_fish1996/article/details/87533029)
