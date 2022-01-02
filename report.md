@@ -51,7 +51,7 @@
     
     下面为着色器中的代码实现：
 
-    <img src="https://raw.githubusercontent.com/yuanyangwangTJ/Picture/master/img/20220102223123.png" alt="image-20220102223116144" style="zoom: 80%;" align="left"/><br/>
+    <p><img src="https://raw.githubusercontent.com/yuanyangwangTJ/Picture/master/img/20220102223123.png" alt="image-20220102223116144" style="zoom: 80%;" align="left"/></p>
     
     ----
     
