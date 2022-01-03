@@ -33,9 +33,7 @@ uniform sampler2D noisetex;
 layout (location = 0) out vec4 FragColor;
 layout (location = 1) out vec4 BrightColor;
 
-//---------NOISE GENERATION------------
-//Noise generation based on a simple hash, to ensure that if a given point on the dome
-//(after taking into account the rotation of the sky) is a star, it remains a star all night long
+
 float Hash( float n ){
         return fract( (1.0 + sin(n)) * 415.92653);
 }
@@ -162,75 +160,65 @@ void main(){
     vec2 texture_coord=vec2(clamp((sun_norm.y + 1.0) / 2.0, 0.02,0.98),max(0.01,pos_norm.y));
     
     
-    //We read the tint texture according to the position of the sun and the weather factor
+    //从贴图中读取天空底色，根据片元与太阳的距离混合
     vec3 color_wo_sun = texture(tint2, texture_coord).rgb;
     vec3 color_w_sun = texture(tint, texture_coord).rgb;
     color = weather*mix(color_wo_sun,color_w_sun,dist*0.5+0.5);
 
-    
-        
-
-    //Computing u and v for the clouds textures (spherical projection)
     float u = texCoord.x;
     float v = texCoord.y;
 
 
-    //Cloud color
-    //color depending on the weather (shade of grey) *  (day or night) ?
+    //根据天气和太阳高度混合厚薄两种云层
     vec3 cloud_color = vec3(min(weather*3.0/2.0,1.0))*(sun_norm.y > 0 ? 0.95 : 0.95+sun_norm.y*1.8);
 
-    //Reading from the clouds maps
-    //mixing according to the weather (1.0 -> clouds1 (sunny), 0.5 -> clouds2 (rainy))
-    //+ time translation along the u-axis (horizontal) for the clouds movement
+    
+    //根据天气将云层混合，weather接近1.0时为晴天，接近0.5时为阴雨天
     float transparency = mix(texture(clouds2,vec2(u+time,v)).r,texture(clouds1,vec2(u+time,v)).r,(weather-0.5)*2.0);
 
     // Stars
-    if(sun_norm.y<0.1){//Night or dawn
+    if(sun_norm.y<0.1){//傍晚或夜晚
         float threshold = 0.99;
-        //We generate a random value between 0 and 1
+        //通过噪声生成随机数
         float star_intensity = Noise3d(normalize(star_pos));
-        //And we apply a threshold to keep only the brightest areas
+        //当随机数大于阈值时，该点为星星
         if (star_intensity >= threshold){
-            //We compute the star intensity
+            //计算星星亮度
             star_intensity = pow((star_intensity - threshold)/(1.0 - threshold), 6.0)*(-sun_norm.y+0.1);
             color += vec3(star_intensity);
         }
     }
 
-    //Sun
+    //太阳
     float radius = length(pos_norm-sun_norm);
-    if(radius < 0.05){//We are in the area of the sky which is covered by the sun
+    if(radius < 0.05){//在渲染太阳的区域
         float t = clamp(sun_norm.y,0.01,1.0);
         radius = radius/0.05;
         radius = clamp(radius,0.01,0.8);
-        if(radius < 1.0-0.001){//< we need a small bias to avoid flickering on the border of the texture
-            //We read the alpha value from a texture where x = radius and y=height in the sky (~time)
+        if(radius < 1.0-0.001){//避免贴图边缘产生冲突
+            //贴图横坐标为太阳半径，纵坐标为时间
             vec4 sun_color = texture(sun,vec2(radius,t));
             color +=sun_color.rgb;
         }
     }
 
-    //Moon
-    float radius_moon = length(pos_norm+sun_norm);//the moon is at position -sun_pos
-    if(radius_moon < 0.03){//We are in the area of the sky which is covered by the moon
-        //We define a local plane tangent to the skydome at -sun_norm
-        //We work in model space (everything normalized)
+    //月亮
+    float radius_moon = length(pos_norm+sun_norm);//月亮位置为-sunPos
+    if(radius_moon < 0.03){//当前片元在渲染月亮的区域
+        //在月亮位置虚构一个平面，与-sun_norm垂直
         vec3 n1 = normalize(cross(-sun_norm,vec3(0,1,0)));
         vec3 n2 = normalize(cross(-sun_norm,n1));
-        //We project pos_norm on this plane
+        //将pos_norm投影到该平面
         float x = dot(pos_norm,n1);
         float y = dot(pos_norm,n2);
-        //x,y are two sine, ranging approx from 0 to sqrt(2)*0.03. We scale them to [-1,1], then we will translate to [0,1]
+  
         float scale = 23.57*0.5;
-        //we need a compensation term because we made projection on the plane and not on the real sphere + other approximations.
         float compensation = 1.4;
-        //And we read in the texture of the moon. The projection we did previously allows us to have an undeformed moon
-        //(for the sun we didn't care as there are no details on it)
+        //通过上述的投影操作，此时读取的月亮将不会扭曲
         color = mix(color,texture(moon,vec2(x,y)*scale*compensation+vec2(0.5)).rgb,clamp(-sun_norm.y*3,0,1));
     }
 
-    //Final mix
-    //mixing with the cloud color allows us to hide things behind clouds (sun, stars, moon)
+    //最终混合，云层最后混合，确保太阳、月亮、星空都在云之后
     float kcloud = (clamp(sun_norm.y,-0.15,0.1)+0.15)/0.25*0.9+0.1;
     color = mix(color,cloud_color,clamp((2-weather)*transparency,0,1)*kcloud);	
     vec4 cloud = getCloud(pos, CameraPos); // 云颜色
@@ -241,7 +229,4 @@ void main(){
 
 	FragColor = vec4(color, 1.0f);
     BrightColor = vec4(0.0,0.0,0.0,1.0);
-
-
-
 }
